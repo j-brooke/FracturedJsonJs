@@ -1,0 +1,23 @@
+{
+  "name": "fracturedjsonjs",
+  "version": "1.0.0",
+  "description": "JSON formatter that produces human-readable but fairly compact output",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j-brooke/FracturedJsonJs.git"
+  },
+  "keywords": [
+    "JSON",
+    "formatter"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/j-brooke/FracturedJsonJs/issues"
+  },
+  "homepage": "https://github.com/j-brooke/FracturedJsonJs#readme"
+}
