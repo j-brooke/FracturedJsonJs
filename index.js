@@ -25,7 +25,7 @@ class FracturedJson {
         this.NestedBracketPadding = true;
         this.ColonPadding = true;
         this.CommaPadding = true;
-        this._indentString = "    ";
+        this.IndentString = "    ";
         this._colonPaddingStr = "";
         this._commaPaddingStr = "";
         this._eolStr = "\n";
@@ -266,7 +266,7 @@ class FracturedJson {
         if (indentStr==undefined) {
             indentStr = "";
             for (let i=0; i<depth; ++i)
-                indentStr += this._indentString;
+                indentStr += this.IndentString;
 
             this._indentArray[depth] = indentStr;
         }
