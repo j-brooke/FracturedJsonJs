@@ -12,7 +12,10 @@
   },
   "keywords": [
     "JSON",
-    "formatter"
+    "formatter",
+    "pretty printer",
+    "beautifier",
+    "stringify"
   ],
   "author": "",
   "license": "MIT",
