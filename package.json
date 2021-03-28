@@ -1,6 +1,6 @@
 {
   "name": "fracturedjsonjs",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "description": "JSON formatter that produces human-readable but fairly compact output",
   "main": "index.js",
   "scripts": {
