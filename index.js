@@ -302,7 +302,7 @@ class FracturedJson {
         this._commaPaddingStr = (this.CommaPadding)? " " : "";
         this._eolStr = "\n";
         this._indentArray = [];
-        this.PrefixString ||= "";
+        this.PrefixString = this.PrefixString || "";
     }
 
     _combine(strArray) {
