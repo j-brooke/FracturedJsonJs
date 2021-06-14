@@ -18,6 +18,8 @@ npm i fracturedjsonjs
 ## Usage
 
 ```js
+const FracturedJson = require('fracturedjsonjs')
+
 const obj = {}
 
 const format = new FracturedJson()
