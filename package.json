@@ -1,10 +1,10 @@
 {
   "name": "fracturedjsonjs",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "JSON formatter that produces human-readable but fairly compact output",
-  "main": "index.js",
+  "main": "dist/fracturedjson.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -17,10 +17,14 @@
     "beautifier",
     "stringify"
   ],
-  "author": "",
+  "author": "j-brooke",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/j-brooke/FracturedJsonJs/issues"
   },
-  "homepage": "https://j-brooke.github.io/FracturedJson/"
+  "homepage": "https://j-brooke.github.io/FracturedJson/",
+  "devDependencies": {
+    "@types/node": "^16.3.1",
+    "typescript": "^4.3.5"
+  }
 }

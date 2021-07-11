@@ -2,11 +2,12 @@
 JSON formatter the produces human-readable but fairly compact output.
 
 This is a Javascript port what was originally a .NET library.  For more information, see:
+* [Browser-based Formatter](https://j-brooke.github.io/FracturedJson/)
 * [FracturedJsonJs GitHub Page](https://github.com/j-brooke/FracturedJsonJs)
 * [FracturedJson GitHub Page](https://github.com/j-brooke/FracturedJson)
 * [FracturedJson Wiki](https://github.com/j-brooke/FracturedJson/wiki)
-* [Browser-based Formatter](https://j-brooke.github.io/FracturedJson/)
 * [npm Package](https://www.npmjs.com/package/fracturedjsonjs)
+* [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=j-brooke.fracturedjsonvsc)
 
 
 ## Install
@@ -18,23 +19,25 @@ npm i fracturedjsonjs
 ## Usage
 
 ```js
-const FracturedJson = require('fracturedjsonjs')
+const { Formatter, EolStyle } = require("fracturedjsonjs");
 
-const obj = {}
+// If "type" is "module" in your package.json, use import instead.
+//import { Formatter, EolStyle } from "fracturedjsonjs";
 
-const format = new FracturedJson()
+const jsObj = [[1, 2, 3], [4, 16, 64]];
 
-// check wiki for options detail
-format.MaxInlineLength = 110
-format.MaxInlineComplexity = 2
-format.MaxCompactArrayComplexity = 2
-format.AlwaysExpandDepth = -1
-format.NestedBracketPadding = true
-format.ColonPadding = true
-format.CommaPadding = true
-format.JustifyNumberLists = false
-format.IndentString = '  '
+const formatter = new Formatter();
+formatter.maxInlineLength = 110;
+formatter.maxInlineComplexity = 1;
+formatter.maxCompactArrayComplexity = 1;
+formatter.tableObjectMinimumSimilarity = 30;
+formatter.tableArrayMinimumSimilarity = 50;
+formatter.jsonEolStyle = EolStyle.Crlf;
 
-// stringify
-format.Serialize(obj)
+// See the wiki page for a complete list of settings, with examples.
+// Note that unlike the .NET version in the wiki, in JS property names start with lower case.
+// https://github.com/j-brooke/FracturedJson/wiki/Options
+
+const jsonString = formatter.serialize(jsObj);
+console.log(jsonString);
 ```
