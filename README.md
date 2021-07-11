@@ -9,6 +9,46 @@ This is a Javascript port what was originally a .NET library.  For more informat
 * [npm Package](https://www.npmjs.com/package/fracturedjsonjs)
 * [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=j-brooke.fracturedjsonvsc)
 
+## Example
+
+Here's a sample of output using default settings:
+
+```json
+{
+    "SimpleArray": [
+          2,   3,   5,   7,  11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,
+         59,  61,  67,  71,  73,  79,  83,  89,  97, 101, 103, 107, 109, 113
+    ],
+    "ObjectColumnsArrayRows": {
+        "Katherine": [ "blue"      , "lightblue", "black"        ],
+        "Logan"    : [ "yellow"    , "blue"     , "black", "red" ],
+        "Erik"     : [ "red"       , "purple"                    ],
+        "Jean"     : [ "lightgreen", "yellow"   , "black"        ]
+    },
+    "ArrayColumnsObjectRows": [
+        { "type": "turret"   , "hp": 400, "loc": {"x": 47, "y": -4} , "flags": "S"   },
+        { "type": "assassin" , "hp":  80, "loc": {"x": 12, "y": 6}  , "flags": "Q"   },
+        { "type": "berserker", "hp": 150, "loc": {"x": 0, "y": 0}                    },
+        { "type": "pittrap"  ,            "loc": {"x": 10, "y": -14}, "flags": "S,I" }
+    ],
+    "ComplexArray": [
+        [ 19,  2 ],
+        [  3,  8 ],
+        [ 14,  0 ],
+        [  9,  9 ],
+        [  9,  9 ],
+        [  0,  3 ],
+        [ 10,  1 ],
+        [  9,  1 ],
+        [  9,  2 ],
+        [  6, 13 ],
+        [ 18,  5 ],
+        [  4, 11 ],
+        [ 12,  2 ]
+    ]
+}
+```
+
 
 ## Install
 
