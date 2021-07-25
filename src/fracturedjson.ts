@@ -329,7 +329,7 @@ export class Formatter {
     private formatObject(depth: number, element: object): FormattedNode {
         // Recursively format all of this object's property values.
         const items = Object.entries(element)
-            .map(kvp => this.formatElement(depth+1, kvp[1]).withName(kvp[0]));
+            .map(kvp => this.formatElement(depth+1, kvp[1]).withName(JSON.stringify(kvp[0])));
         if (items.length===0)
             return this.emptyObject(depth);
 
@@ -571,7 +571,6 @@ export class Formatter {
         const lineLength = 2 + (useNestedBracketPadding? 2 : 0)
             + thisItem.Children.length * this._paddedColonStr.length
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
-            + thisItem.Children.length * 2
             + thisItem.Children.map(fn => fn.Name.length).reduce((acc,item) => acc+item)
             + thisItem.Children.map(fn => fn.Value.length).reduce((acc,item) => acc+item);
         if (lineLength > this._maxInlineLength)
@@ -587,7 +586,7 @@ export class Formatter {
         for (const prop of thisItem.Children) {
             if (!firstElem)
                 buff.push(this._paddedCommaStr);
-            buff.push('"', prop.Name, '"', this._paddedColonStr, prop.Value);
+            buff.push(prop.Name, this._paddedColonStr, prop.Value);
             firstElem = false;
         }
 
@@ -660,14 +659,13 @@ export class Formatter {
             const filteredPropNodes = thisItem.Children.filter(fn => fn.Name === columnStats.PropName);
             if (filteredPropNodes.length===0) {
                 // This object doesn't have this particular property.  Pad it out.
-                const skipLength = 2
-                    + columnStats.PropName.length
+                const skipLength = columnStats.PropName.length
                     + this._paddedColonStr.length
                     + columnStats.MaxValueSize;
                 buff.push(' '.repeat(skipLength));
             } else {
                 const propNode: FormattedNode = filteredPropNodes[0];
-                buff.push('"', columnStats.PropName, '"', this._paddedColonStr);
+                buff.push(columnStats.PropName, this._paddedColonStr);
                 buff.push(columnStats.formatValue(propNode.Value, this._dontJustifyNumbers));
 
                 highestNonBlankIndex = colIndex;
@@ -715,7 +713,7 @@ export class Formatter {
         for (const prop of thisItem.Children) {
             if (!firstItem)
                 buff.push(',', this._eolStr);
-            this.indent(buff, prop.Depth).push('"', prop.Name, '"');
+            this.indent(buff, prop.Depth).push(prop.Name);
 
             if (this._alignExpandedPropertyNames || forceExpandPropNames)
                 buff.push(' '.repeat(maxPropNameLength - prop.Name.length));
