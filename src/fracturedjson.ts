@@ -793,7 +793,6 @@ export class Formatter {
 
         // If the formatted lines would be too long, bail out.
         const lineLength = 4                                                                            // outer brackets & spaces
-            + 2 * orderedProps.length                                                                   // property quotes
             + orderedProps.map(cs => cs.PropName.length).reduce((acc,item) => acc+item) // prop names
             + this._paddedColonStr.length * orderedProps.length                                         // colons
             + orderedProps.map(cs => cs.MaxValueSize).reduce((acc,item) => acc+item)    // values
