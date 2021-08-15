@@ -17,7 +17,7 @@ The module structure has changed and several things renamed to behave in a more 
 * TypeScript support
 * New properties `indentSpaces` and `useTabToIndent` to control indentation.
 * New properties `tableObjectMinimumSimilarity` and `tableArrayMinimumSimilarity` control how alike inline sibling elements need to be to be formatted as a table.
-* New property `tlignExpandedPropertyNames` to line up expanded object property names even when not treated as a table.
+* New property `alignExpandedPropertyNames` to line up expanded object property names even when not treated as a table.
 * New property `dontJustifyNumbers` prevents numbers from being right-justified and set to matching precision.
 
 ### Removed

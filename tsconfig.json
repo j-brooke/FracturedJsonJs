@@ -1,11 +1,17 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "CommonJS",
     "target": "ES2017",
     "strict": true,
     "declaration": true,
     "sourceMap": true,
-    "outDir": "./dist"
+    "allowJs": true,
+    "noImplicitAny": false,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    }
   },
   "exclude": [
     "dist",

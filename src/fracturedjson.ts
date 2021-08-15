@@ -1,3 +1,5 @@
+import * as eaw from 'eastasianwidth';
+
 /*
  * FracturedJsonJs
  * FracturedJsonJs is a library for formatting JSON documents in a human-readable but fairly compact way.
@@ -180,12 +182,40 @@ export class Formatter {
     }
 
     /**
+     * Function that returns the visual width of strings measured in characters.  This is used to line
+     * columns up when formatting objects/arrays as tables.  You can use the static methods
+     * StringWidthByCharacterCount, StringWidthWithEastAsian, or supply your own.
+     */
+    get stringWidthFunc(): (s:string) => number {
+        return this._stringWidthFunc;
+    }
+    set stringWidthFunc(value: (s:string) => number) {
+        this._stringWidthFunc = value;
+    }
+
+    /**
      * Returns a JSON-formatted string that represents the given JavaScript value.  
      * @param jsValue
      */
     serialize(jsValue: any): string {
         this.initInternals();
         return this._prefixString + this.formatElement(0, jsValue).Value;
+    }
+
+    /**
+     * Returns the character count of the string (just like the String.length property).
+     * See StringWidthFunc
+     */
+    static StringWidthByCharacterCount(str: string): number {
+        return str.length;
+    }
+
+    /**
+     * Returns a width, where some East Asian symbols are treated as twice as wide as Latin symbols.
+     * See StringWidthFunc
+     */
+    static StringWidthWithEastAsian(str: string): number {
+        return eaw.length(str);
     }
 
     private _jsonEolStyle: EolStyle = EolStyle.lf;
@@ -203,6 +233,7 @@ export class Formatter {
     private _alignExpandedPropertyNames: boolean = false;
     private _dontJustifyNumbers: boolean = false;
     private _prefixString: string = "";
+    private _stringWidthFunc: (s: string) => number = Formatter.StringWidthWithEastAsian;
 
     private _eolStr: string = "";
     private _indentStr: string = "";
@@ -262,6 +293,7 @@ export class Formatter {
     private formatSimple(depth: number, element: any): FormattedNode {
         const simpleNode = new FormattedNode();
         simpleNode.Value = JSON.stringify(element);
+        simpleNode.ValueLength = this._stringWidthFunc(simpleNode.Value);
         simpleNode.Complexity = 0;
         simpleNode.Depth = depth;
         simpleNode.Kind = JsonValueKind.Array;
@@ -328,8 +360,13 @@ export class Formatter {
 
     private formatObject(depth: number, element: object): FormattedNode {
         // Recursively format all of this object's property values.
-        const items = Object.entries(element)
-            .map(kvp => this.formatElement(depth+1, kvp[1]).withName(JSON.stringify(kvp[0])));
+        const items: FormattedNode[] = [];
+        for (const childKvp of Object.entries(element)) {
+            const elem = this.formatElement(depth+1, childKvp[1]);
+            elem.Name = JSON.stringify(childKvp[0]);
+            elem.NameLength = this._stringWidthFunc(elem.Name);
+            items.push(elem);
+        }
         if (items.length===0)
             return this.emptyObject(depth);
 
@@ -358,6 +395,7 @@ export class Formatter {
     private emptyArray(depth: number): FormattedNode {
         const arr = new FormattedNode();
         arr.Value = "[]";
+        arr.ValueLength = 2;
         arr.Complexity = 0;
         arr.Depth = depth;
         arr.Kind = JsonValueKind.Array;
@@ -374,10 +412,13 @@ export class Formatter {
         if (thisItem.Complexity > this._maxInlineComplexity)
             return false;
 
+        if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
+            return false;
+        
         const useNestedBracketPadding = (this._nestedBracketPadding && thisItem.Complexity >= 2);
         const lineLength = 2 + (useNestedBracketPadding? 2 : 0)
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
-            + thisItem.Children.map(fn => fn.Value.length).reduce((acc,item) => acc+item);
+            + thisItem.Children.map(fn => fn.ValueLength).reduce((acc,item) => acc+item);
         if (lineLength > this._maxInlineLength)
             return false;
 
@@ -400,6 +441,7 @@ export class Formatter {
         buff.push(']');
 
         thisItem.Value = this.combine(buff);
+        thisItem.ValueLength = lineLength;
         thisItem.Format = Format.Inline;
         return true;
     }
@@ -412,6 +454,9 @@ export class Formatter {
     private formatArrayMultilineCompact(thisItem: FormattedNode): boolean {
         if (thisItem.Complexity > this._maxCompactArrayComplexity)
             return false;
+        
+        if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
+            return false;
 
         const buff : string[] = [];
         buff.push('[', this._eolStr);
@@ -422,7 +467,7 @@ export class Formatter {
         while (childIndex < thisItem.Children.length) {
             const notLastItem = childIndex < thisItem.Children.length-1;
 
-            const itemLength = thisItem.Children[childIndex].Value.length;
+            const itemLength = thisItem.Children[childIndex].ValueLength;
             const segmentLength = itemLength + ((notLastItem) ? this._paddedCommaStr.length : 0);
             if (lineLengthSoFar + segmentLength > this._maxInlineLength && lineLengthSoFar > 0) {
                 buff.push(this._eolStr);
@@ -507,7 +552,8 @@ export class Formatter {
                 buff.push(this._paddedCommaStr);
 
             const columnStats = columnStatsArray[index];
-            buff.push(columnStats.formatValue(thisItem.Children[index].Value, this._dontJustifyNumbers));
+            buff.push(columnStats.formatValue(thisItem.Children[index].Value, thisItem.Children[index].ValueLength,
+                this._dontJustifyNumbers));
         }
 
         // Write padding for elements that exist in siblings but not this array.
@@ -550,6 +596,7 @@ export class Formatter {
     private emptyObject(depth: number) {
         const obj = new FormattedNode();
         obj.Value = "{}";
+        obj.ValueLength = 2;
         obj.Complexity = 0;
         obj.Depth = depth;
         obj.Kind = JsonValueKind.Object;
@@ -566,13 +613,16 @@ export class Formatter {
         if (thisItem.Complexity > this._maxInlineComplexity)
             return false;
 
+        if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
+            return false;
+        
         const useNestedBracketPadding = (this._nestedBracketPadding && thisItem.Complexity >= 2);
 
         const lineLength = 2 + (useNestedBracketPadding? 2 : 0)
             + thisItem.Children.length * this._paddedColonStr.length
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
-            + thisItem.Children.map(fn => fn.Name.length).reduce((acc,item) => acc+item)
-            + thisItem.Children.map(fn => fn.Value.length).reduce((acc,item) => acc+item);
+            + thisItem.Children.map(fn => fn.NameLength).reduce((acc,item) => acc+item)
+            + thisItem.Children.map(fn => fn.ValueLength).reduce((acc,item) => acc+item);
         if (lineLength > this._maxInlineLength)
             return false;
 
@@ -595,6 +645,7 @@ export class Formatter {
         buff.push('}');
 
         thisItem.Value = this.combine(buff);
+        thisItem.ValueLength = lineLength;
         thisItem.Format = Format.Inline;
         return true;
     }
@@ -659,14 +710,14 @@ export class Formatter {
             const filteredPropNodes = thisItem.Children.filter(fn => fn.Name === columnStats.PropName);
             if (filteredPropNodes.length===0) {
                 // This object doesn't have this particular property.  Pad it out.
-                const skipLength = columnStats.PropName.length
+                const skipLength = columnStats.PropNameLength
                     + this._paddedColonStr.length
                     + columnStats.MaxValueSize;
                 buff.push(' '.repeat(skipLength));
             } else {
                 const propNode: FormattedNode = filteredPropNodes[0];
                 buff.push(columnStats.PropName, this._paddedColonStr);
-                buff.push(columnStats.formatValue(propNode.Value, this._dontJustifyNumbers));
+                buff.push(columnStats.formatValue(propNode.Value, propNode.ValueLength, this._dontJustifyNumbers));
 
                 highestNonBlankIndex = colIndex;
             }
@@ -704,7 +755,7 @@ export class Formatter {
      * @private
      */
     private formatObjectExpanded(thisItem: FormattedNode, forceExpandPropNames: boolean): boolean {
-        const maxPropNameLength = Math.max(...thisItem.Children.map(fn => fn.Name.length));
+        const maxPropNameLength = Math.max(...thisItem.Children.map(fn => fn.NameLength));
 
         const buff : string[] = [];
         buff.push('{', this._eolStr);
@@ -716,7 +767,7 @@ export class Formatter {
             this.indent(buff, prop.Depth).push(prop.Name);
 
             if (this._alignExpandedPropertyNames || forceExpandPropNames)
-                buff.push(' '.repeat(maxPropNameLength - prop.Name.length));
+                buff.push(' '.repeat(maxPropNameLength - prop.NameLength));
 
             buff.push(this._paddedColonStr, prop.Value);
             firstItem = false;
@@ -746,8 +797,10 @@ export class Formatter {
         if (!columnStats.IsQualifiedNumeric)
             return;
 
-        for (const propNode of itemList)
-            propNode.Value = columnStats.formatValue(propNode.Value, this._dontJustifyNumbers);
+        for (const propNode of itemList) {
+            propNode.Value = columnStats.formatValue(propNode.Value, propNode.ValueLength, this._dontJustifyNumbers);
+            propNode.ValueLength = columnStats.MaxValueSize;
+        }
     }
 
     /**
@@ -772,6 +825,7 @@ export class Formatter {
                 if (!propStats) {
                     propStats = new ColumnStats();
                     propStats.PropName = propNode.Name;
+                    propStats.PropNameLength = propNode.NameLength;
                     props[propStats.PropName] = propStats;
                 }
 
@@ -793,7 +847,7 @@ export class Formatter {
 
         // If the formatted lines would be too long, bail out.
         const lineLength = 4                                                                            // outer brackets & spaces
-            + orderedProps.map(cs => cs.PropName.length).reduce((acc,item) => acc+item) // prop names
+            + orderedProps.map(cs => cs.PropNameLength).reduce((acc,item) => acc+item)  // prop names
             + this._paddedColonStr.length * orderedProps.length                                         // colons
             + orderedProps.map(cs => cs.MaxValueSize).reduce((acc,item) => acc+item)    // values
             + this._paddedCommaStr.length * (orderedProps.length-1);                                    // commas
@@ -865,6 +919,7 @@ enum JsonValueKind {
  */
 class ColumnStats {
     PropName: string = "";
+    PropNameLength: number = 0;
     OrderSum: number = 0;
     Count: number = 0;
     MaxValueSize: number = 0;
@@ -880,7 +935,7 @@ class ColumnStats {
     update(propNode: FormattedNode, index: number) {
         this.OrderSum += index;
         this.Count += 1;
-        this.MaxValueSize = Math.max(this.MaxValueSize, propNode.Value.length);
+        this.MaxValueSize = Math.max(this.MaxValueSize, propNode.ValueLength);
         this.IsQualifiedNumeric = this.IsQualifiedNumeric && (propNode.Kind === JsonValueKind.Number);
 
         if (!this.IsQualifiedNumeric)
@@ -901,14 +956,14 @@ class ColumnStats {
         }
     }
 
-    formatValue(value: string, dontJustify: boolean): string {
+    formatValue(value: string, valueLength: number, dontJustify: boolean): string {
         if (this.IsQualifiedNumeric && !dontJustify) {
             const adjustedVal =  Number(value).toFixed(this.CharsAfterDec);
             const totalLength = this.CharsBeforeDec + this.CharsAfterDec + ((this.CharsAfterDec>0)? 1 : 0);
             return adjustedVal.padStart(totalLength);
         }
 
-        return value.padEnd(this.MaxValueSize);
+        return value.padEnd(this.MaxValueSize - (valueLength-value.length));
     }
 }
 
@@ -924,7 +979,9 @@ enum Format {
  */
 class FormattedNode {
     Name: string = "";
+    NameLength: number = 0;
     Value: string = "";
+    ValueLength: number = 0;
     Complexity: number = 0;
     Depth: number = 0;
     Kind: JsonValueKind = JsonValueKind.Undefined;
