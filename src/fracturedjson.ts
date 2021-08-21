@@ -65,13 +65,24 @@ export class Formatter {
 
     /**
      * If an inlined array or object contains other arrays or objects, setting NestedBracketPadding to true
-     * will include spaces inside the outer brackets.
+     * will include spaces inside the outer brackets.  (See also simpleBracketPadding)
      */
     get nestedBracketPadding(): boolean {
         return this._nestedBracketPadding;
     }
     set nestedBracketPadding(value: boolean) {
         this._nestedBracketPadding = value;
+    }
+
+    /**
+     * If an inlined array or object does NOT contain other arrays/objects, setting SimpleBracketPadding to true
+     * will include spaces inside the brackets.  (See also nestedBracketPadding)
+     */
+    get simpleBracketPadding(): boolean {
+        return this._simpleBracketPadding;
+    }
+    set simpleBracketPadding(value: boolean) {
+        this._simpleBracketPadding = value;
     }
 
     /**
@@ -223,6 +234,7 @@ export class Formatter {
     private _maxInlineComplexity: number = 2;
     private _maxCompactArrayComplexity: number = 1;
     private _nestedBracketPadding: boolean = true;
+    private _simpleBracketPadding: boolean = false;
     private _colonPadding: boolean = true;
     private _commaPadding: boolean = true;
     private _alwaysExpandDepth: number = -1;
@@ -415,8 +427,8 @@ export class Formatter {
         if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
             return false;
         
-        const useNestedBracketPadding = (this._nestedBracketPadding && thisItem.Complexity >= 2);
-        const lineLength = 2 + (useNestedBracketPadding? 2 : 0)
+        const useBracketPadding = (thisItem.Complexity >= 2)? this._nestedBracketPadding : this._simpleBracketPadding;
+        const lineLength = 2 + (useBracketPadding? 2 : 0)
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
             + thisItem.Children.map(fn => fn.ValueLength).reduce((acc,item) => acc+item);
         if (lineLength > this._maxInlineLength)
@@ -425,7 +437,7 @@ export class Formatter {
         const buff : string[] = [];
         buff.push('[');
 
-        if (useNestedBracketPadding)
+        if (useBracketPadding)
             buff.push(' ');
 
         let firstElem = true;
@@ -436,7 +448,7 @@ export class Formatter {
             firstElem = false;
         }
 
-        if (useNestedBracketPadding)
+        if (useBracketPadding)
             buff.push(' ');
         buff.push(']');
 
@@ -615,10 +627,10 @@ export class Formatter {
 
         if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
             return false;
-        
-        const useNestedBracketPadding = (this._nestedBracketPadding && thisItem.Complexity >= 2);
 
-        const lineLength = 2 + (useNestedBracketPadding? 2 : 0)
+        const useBracketPadding = (thisItem.Complexity >= 2)? this._nestedBracketPadding : this._simpleBracketPadding;
+        
+        const lineLength = 2 + (useBracketPadding? 2 : 0)
             + thisItem.Children.length * this._paddedColonStr.length
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
             + thisItem.Children.map(fn => fn.NameLength).reduce((acc,item) => acc+item)
@@ -629,7 +641,7 @@ export class Formatter {
         const buff: string[] = [];
         buff.push('{');
 
-        if (useNestedBracketPadding)
+        if (useBracketPadding)
             buff.push(' ');
 
         let firstElem = true;
@@ -640,7 +652,7 @@ export class Formatter {
             firstElem = false;
         }
 
-        if (useNestedBracketPadding)
+        if (useBracketPadding)
             buff.push(' ');
         buff.push('}');
 
