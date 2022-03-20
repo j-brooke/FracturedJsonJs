@@ -205,7 +205,7 @@ export class Formatter {
     }
 
     /**
-     * Returns a JSON-formatted string that represents the given JavaScript value.  
+     * Returns a JSON-formatted string that represents the given JavaScript value.
      * @param jsValue
      */
     serialize(jsValue: any): string {
@@ -303,13 +303,15 @@ export class Formatter {
      * @private
      */
     private formatSimple(depth: number, element: any): FormattedNode {
+        // Treat undefined as null.  (But note that in objects we skip them instead.)
+        if (element===undefined)
+            element = null;
+
         const simpleNode = new FormattedNode();
         simpleNode.Value = JSON.stringify(element);
         simpleNode.ValueLength = this._stringWidthFunc(simpleNode.Value);
         simpleNode.Complexity = 0;
         simpleNode.Depth = depth;
-        simpleNode.Kind = JsonValueKind.Array;
-        simpleNode.Format = Format.Inline;
 
         if (element===null) {
             simpleNode.Kind = JsonValueKind.Null;
@@ -374,6 +376,10 @@ export class Formatter {
         // Recursively format all of this object's property values.
         const items: FormattedNode[] = [];
         for (const childKvp of Object.entries(element)) {
+            // For objects, skip undefined values.  (Elsewhere we convert them to null instead.)
+            if (childKvp[1]===undefined)
+                continue;
+
             const elem = this.formatElement(depth+1, childKvp[1]);
             elem.Name = JSON.stringify(childKvp[0]);
             elem.NameLength = this._stringWidthFunc(elem.Name);
@@ -426,7 +432,7 @@ export class Formatter {
 
         if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
             return false;
-        
+
         const useBracketPadding = (thisItem.Complexity >= 2)? this._nestedBracketPadding : this._simpleBracketPadding;
         const lineLength = 2 + (useBracketPadding? 2 : 0)
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
@@ -466,7 +472,7 @@ export class Formatter {
     private formatArrayMultilineCompact(thisItem: FormattedNode): boolean {
         if (thisItem.Complexity > this._maxCompactArrayComplexity)
             return false;
-        
+
         if (thisItem.Children.some(fn => fn.Format !== Format.Inline))
             return false;
 
@@ -629,7 +635,7 @@ export class Formatter {
             return false;
 
         const useBracketPadding = (thisItem.Complexity >= 2)? this._nestedBracketPadding : this._simpleBracketPadding;
-        
+
         const lineLength = 2 + (useBracketPadding? 2 : 0)
             + thisItem.Children.length * this._paddedColonStr.length
             + (thisItem.Children.length -1) * this._paddedCommaStr.length
