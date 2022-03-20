@@ -1,5 +1,15 @@
 # FracturedJsonJs Change Log
 
+## 2.2.1
+
+### Bug Fixes
+
+Fixed https://github.com/j-brooke/FracturedJsonJs/issues/5 - an exception was being thrown when the input data contained `undefined`.  This is only relevant to the JavaScript version.  In fixing this I tried to mimic the behavior of `JSON.stringify()`, and succeded in two out of three cases:
+
+* If an array contains `undefined`, `null` is used instead.
+* If an object property's value is `undefined`, the property is skipped.  (Property names can't be `undefined`.)
+* If `undefined` is passed as the root value to `JSON.stringify()`, the return value is `undefined`.  As of this version, FracturedJsonJs' `serialize()` will return the string `null`.  To make it behave like `stringify` in this case would have required changing the TypeScript signature, which would require a major version increase.
+
 ## 2.2.0
 
 ### Added
