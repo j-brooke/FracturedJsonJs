@@ -7,10 +7,13 @@ import {FracturedJsonException} from "./FracturedJsonException";
  * Class for keeping track of info while scanning text into JSON tokens.
  */
 export class ScannerState {
-    Buffer: string = "";
     CurrentPosition: InputPosition = { Index: 0, Row:0, Column:0 };
     TokenPosition: InputPosition = { Index: 0, Row:0, Column:0 };
     NonWhitespaceSinceLastNewline: boolean = false;
+
+    constructor(originalText: string) {
+        this._originalText = originalText;
+    }
 
     Advance(isWhitespace: boolean): void {
         if (this.CurrentPosition.Index>= MaxDocSize)
@@ -34,9 +37,10 @@ export class ScannerState {
     }
 
     MakeTokenFromBuffer(type: TokenType, trimEnd: boolean = false): JsonToken {
+        const substring = this._originalText.substring(this.TokenPosition.Index, this.CurrentPosition.Index);
         return {
             Type: type,
-            Text: (trimEnd) ? this.Buffer.trimEnd() : this.Buffer,
+            Text: (trimEnd) ? substring.trimEnd() : substring,
             InputPosition: {...this.TokenPosition},
         };
     }
@@ -49,9 +53,19 @@ export class ScannerState {
         }
     }
 
+    Current(): number {
+        return (this.AtEnd())? NaN : this._originalText.charCodeAt(this.CurrentPosition.Index);
+    }
+
+    AtEnd(): boolean {
+        return this.CurrentPosition.Index >= this._originalText.length;
+    }
+
     Throw(message: string): void {
         throw FracturedJsonException(message, this.CurrentPosition);
     }
+
+    private _originalText: string;
 }
 
 const MaxDocSize: number = 2000000000;
