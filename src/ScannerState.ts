@@ -1,7 +1,7 @@
 ﻿import {InputPosition} from "./InputPosition";
 import {TokenType} from "./TokenType";
 import {JsonToken} from "./JsonToken";
-import {FracturedJsonException} from "./FracturedJsonException";
+import {FracturedJsonError} from "./FracturedJsonError";
 
 /**
  * Class for keeping track of info while scanning text into JSON tokens.
@@ -62,7 +62,7 @@ export class ScannerState {
     }
 
     Throw(message: string): void {
-        throw FracturedJsonException(message, this.CurrentPosition);
+        throw new FracturedJsonError(message, this.CurrentPosition);
     }
 
     private _originalText: string;
