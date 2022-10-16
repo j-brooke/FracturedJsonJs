@@ -11,6 +11,7 @@ import {JsonItemType} from "./JsonItemType";
 import {BracketPaddingType} from "./BracketPaddingType";
 import {PaddedFormattingTokens} from "./PaddedFormattingTokens";
 import {JsonItem} from "./JsonItem";
+import {FracturedJsonError} from "./FracturedJsonError";
 
 export class TableTemplate {
     /**
@@ -73,6 +74,15 @@ export class TableTemplate {
         }
 
         return false;
+    }
+
+    FormatNumber(originalValueString: string): string {
+        if (!this.IsFormattableNumber)
+            throw new FracturedJsonError("Logic error - attempting to format inappropriate thing as number");
+
+        const numericVal = Number(originalValueString);
+        const formattedString = numericVal.toFixed(this._maxDigitsAfterDecimal);
+        return formattedString.padStart(this.CompositeValueLength);
     }
 
     private readonly _pads: PaddedFormattingTokens;
