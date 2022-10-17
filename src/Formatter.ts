@@ -30,6 +30,17 @@ export class Formatter {
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, false);
+        this.FormatTopLevel(docModel, startingDepth, buffer);
+
+        return buffer.AsString();
+    }
+
+    Minify(jsonText:string): string {
+        const buffer = new StringBuilderBuffer();
+        const parser = new Parser();
+        parser.Options = this.Options;
+        const docModel = parser.ParseTopLevel(jsonText, false);
+        this.MinifyTopLevel(docModel, buffer);
 
         return buffer.AsString();
     }
@@ -46,6 +57,17 @@ export class Formatter {
             this.ComputeItemLengths(item);
             this.FormatItem(item, startingDepth, false);
         }
+
+        this._buffer = new StringBuilderBuffer();
+    }
+
+    private MinifyTopLevel(docModel: JsonItem[], buffer: IBuffer) {
+        this._buffer = buffer;
+        this._pads = new PaddedFormattingTokens(this.Options, this.StringLengthFunc);
+
+        let atStartOfNewLine = true;
+        for (const item of docModel)
+            atStartOfNewLine = this.MinifyItem(item, atStartOfNewLine);
 
         this._buffer = new StringBuilderBuffer();
     }
@@ -278,6 +300,7 @@ export class Formatter {
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon),
             this._pads.End(item.Type, BracketPaddingType.Empty));
+        this.StandardFormatEnd(item, includeTrailingComma);
 
         return true;
     }
@@ -563,6 +586,91 @@ export class Formatter {
     private AvailableLineSpace(depth: number): number {
         return Math.min(this.Options.MaxInlineLength,
             this.Options.MaxTotalLineLength - this._pads.PrefixStringLen - this.Options.IndentSpaces * depth);
+    }
+
+    /**
+     * Recursively write a minified version of the item to the buffer, while preserving comments.
+     */
+    private MinifyItem(item: JsonItem, atStartOfNewLine: boolean): boolean {
+        const newline = "\n";
+        this._buffer.Add(item.PrefixComment);
+        if (item.Name.length > 0)
+            this._buffer.Add(item.Name, ":");
+
+        if (item.MiddleComment.indexOf(newline) >= 0) {
+            const normalizedComment = Formatter.NormalizeMultilineComment(item.MiddleComment, Number.MAX_VALUE);
+            for (const line of normalizedComment)
+                this._buffer.Add(line, newline);
+        }
+        else {
+            this._buffer.Add(item.MiddleComment);
+        }
+
+        if (item.Type == JsonItemType.Array || item.Type == JsonItemType.Object) {
+            let closeBracket: string;
+            if (item.Type == JsonItemType.Array) {
+                this._buffer.Add("[");
+                closeBracket = "]";
+            }
+            else {
+                this._buffer.Add("{");
+                closeBracket = "}";
+            }
+
+            // Loop through children.  Print commas when needed.  Keep track of when we've started a new line -
+            // that's important for blank lines.
+            let needsComma = false;
+            let atStartOfNewLine = false;
+            for (const child of item.Children) {
+                if (!Formatter.IsCommentOrBlankLine(child.Type)) {
+                    if (needsComma)
+                        this._buffer.Add(",");
+                    needsComma = true;
+                }
+                atStartOfNewLine = this.MinifyItem(child, atStartOfNewLine);
+            }
+            this._buffer.Add(closeBracket);
+        }
+        else if (item.Type == JsonItemType.BlankLine) {
+            // Make sure we're starting on a new line before inserting a blank line.  Otherwise some can be lost.
+            if (!atStartOfNewLine)
+                this._buffer.Add(newline);
+            this._buffer.Add(newline);
+            return true;
+        }
+        else if (item.Type == JsonItemType.LineComment) {
+            // Make sure we start on a new line for the comment, so that it will definitely be parsed as standalone.
+            if (!atStartOfNewLine)
+                this._buffer.Add(newline);
+            this._buffer.Add(item.Value, newline);
+            return true;
+        }
+        else if (item.Type == JsonItemType.BlockComment) {
+            // Make sure we start on a new line for the comment, so that it will definitely be parsed as standalone.
+            if (!atStartOfNewLine)
+                this._buffer.Add(newline);
+
+            if (item.Value.indexOf(newline)>=0) {
+                const normalizedComment = Formatter.NormalizeMultilineComment(item.Value, Number.MAX_VALUE);
+                for (const line of normalizedComment)
+                    this._buffer.Add(line, newline);
+                return true;
+            }
+
+            this._buffer.Add(item.Value, newline);
+            return true;
+        }
+        else {
+            this._buffer.Add(item.Value);
+        }
+
+        this._buffer.Add(item.PostfixComment);
+        if (item.PostfixComment.length>0 && item.IsPostCommentLineStyle) {
+            this._buffer.Add(newline);
+            return true;
+        }
+
+        return false;
     }
 
     private static GetPaddingType(arrOrObj: JsonItem): BracketPaddingType {
