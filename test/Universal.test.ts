@@ -2,6 +2,7 @@
 import {FracturedJsonOptions} from "../src/FracturedJsonOptions";
 import {CommentPolicy} from "../src/CommentPolicy";
 import {Formatter} from "../src/Formatter";
+import {EolStyle} from "../out/EolStyle";
 
 /**
  * Tests that should pass with ANY input and ANY settings, within a few constraints.  These aren't particularly
@@ -17,6 +18,7 @@ import {Formatter} from "../src/Formatter";
  * tests that don't impose these restrictions.
  */
 describe("Universal Tests", () => {
+    // Tests that the output is actually valid JSON.
     test.each(GenerateUniversalParams())("Is well formed", (params) => {
         const formatter = new Formatter();
         formatter.Options = params.Opts;
@@ -28,6 +30,51 @@ describe("Universal Tests", () => {
         const outputText = formatter.Reformat(params.Text, 0);
 
         JSON.parse(outputText);
+    });
+
+    // Any string that exists in the input should exist somewhere in the output.
+    test.each(GenerateUniversalParams())("All strings exist", (params) => {
+        const formatter = new Formatter();
+        formatter.Options = params.Opts;
+        const outputText = formatter.Reformat(params.Text, 0);
+
+        let startPos = 0;
+        while (true) {
+            while (startPos < params.Text.length && params.Text[startPos] != '"')
+                startPos += 1;
+
+            let endPos = startPos + 1;
+            while (endPos < params.Text.length && params.Text[endPos] != '"')
+                endPos += 1;
+
+            if (endPos >= params.Text.length)
+                return;
+
+            const stringFromSource = params.Text.substring(startPos+1, endPos - startPos - 2);
+            expect(params.Text).toContain(stringFromSource);
+
+            startPos = endPos + 1;
+        }
+    });
+
+    // Makes sure that the length restriction properties are respected.
+    test.each(GenerateUniversalParams())("Max length respected", (params) => {
+        const formatter = new Formatter();
+        formatter.Options = params.Opts;
+        const outputText = formatter.Reformat(params.Text, 0);
+        const outputLines = outputText.trimEnd().split(EolString(params.Opts));
+
+        for (const line of outputLines) {
+            const content = SkipPrefixAndIndent(params.Opts, line);
+
+            // If the content is shorter than the max, it's all good.
+            if (content.length <= params.Opts.MaxInlineLength && line.length <= params.Opts.MaxTotalLineLength)
+                continue;
+
+            // We'll consider it a single element if there's no more than one comma.
+            const commaCount = content.replace(/[^,]/g, "").length;
+            expect(commaCount).toBeLessThanOrEqual(1);
+        }
     });
 });
 
@@ -77,7 +124,7 @@ function GenerateOptions(): FracturedJsonOptions[] {
 
     let opts = new FracturedJsonOptions();
     optsList.push(opts);
-/*
+
     opts = new FracturedJsonOptions();
     opts.MaxInlineComplexity = 10000;
     optsList.push(opts);
@@ -138,6 +185,22 @@ function GenerateOptions(): FracturedJsonOptions[] {
     opts.IndentSpaces = 3;
     opts.PrefixString = "\t\t";
     optsList.push(opts);
-*/
+
     return optsList;
+}
+
+function EolString(options: FracturedJsonOptions) {
+    switch (options.JsonEolStyle) {
+        case EolStyle.Crlf:
+            return "\r\n";
+        default:
+            return "\n";
+    }
+}
+
+function SkipPrefixAndIndent(options: FracturedJsonOptions, line: string): string {
+    // Skip past the prefix string and whitespace.
+    if (line.indexOf(options.PrefixString) != 0)
+        throw new Error("Output line does not begin with prefix string");
+    return  line.substring(options.PrefixString.length).trimStart();
 }

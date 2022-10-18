@@ -191,7 +191,7 @@ export class Formatter {
         const template = new TableTemplate(this._pads, !this.Options.DontJustifyNumbers);
         template.MeasureTableRoot(item);
 
-        const likelyAvailableLineSpace = this.AvailableLineSpace(depth+1);
+        const likelyAvailableLineSpace = this.AvailableLineSpace(depth + 1);
         let avgItemWidth = this._pads.CommaLen;
         if (template.IsRowDataCompatible)
             avgItemWidth += template.TotalLength;
@@ -205,7 +205,7 @@ export class Formatter {
         const depthAfterColon = this.StandardFormatStart(item, depth);
         this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty));
 
-        const availableLineSpace = this.AvailableLineSpace(depthAfterColon);
+        const availableLineSpace = this.AvailableLineSpace(depthAfterColon + 1);
         let remainingLineSpace = -1;
         for (let i=0; i<item.Children.length; ++i) {
             // Figure out whether the next item fits on the current line.  If not, start a new one.
@@ -248,7 +248,7 @@ export class Formatter {
         const availableSpace = this.AvailableLineSpace(depth + 1) - this._pads.CommaLen;
 
         // If any child element is too long even without formatting, don't bother.
-        const isChildTooLong = item.Children.filter(ch => Formatter.IsCommentOrBlankLine(ch.Type))
+        const isChildTooLong = item.Children.filter(ch => !Formatter.IsCommentOrBlankLine(ch.Type))
             .some(ch => ch.MinimumTotalLength > availableSpace);
         if (isChildTooLong)
             return false;
