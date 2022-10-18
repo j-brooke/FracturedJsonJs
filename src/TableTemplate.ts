@@ -189,6 +189,9 @@ export class TableTemplate {
         for (const subTemplate of this.Children)
             subTemplate.PruneAndRecompute(maxAllowedComplexity-1);
 
+        if (!this.IsRowDataCompatible)
+            this.Children = [];
+
         this.CompositeValueLength = this.SimpleValueLength;
         if (this.Children.length>0) {
             const totalChildLen = this.Children.map(ch => ch.TotalLength).reduce((prev:number, cur:number) => prev + cur);

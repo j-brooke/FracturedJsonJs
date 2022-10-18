@@ -50,8 +50,8 @@ describe("Universal Tests", () => {
             if (endPos >= params.Text.length)
                 return;
 
-            const stringFromSource = params.Text.substring(startPos+1, endPos - startPos - 2);
-            expect(params.Text).toContain(stringFromSource);
+            const stringFromSource = params.Text.substring(startPos+1, endPos);
+            expect(outputText).toContain(stringFromSource);
 
             startPos = endPos + 1;
         }
@@ -74,6 +74,63 @@ describe("Universal Tests", () => {
             // We'll consider it a single element if there's no more than one comma.
             const commaCount = content.replace(/[^,]/g, "").length;
             expect(commaCount).toBeLessThanOrEqual(1);
+        }
+    });
+
+
+    test.each(GenerateUniversalParams())("Max inline complexity respected", (params) => {
+        const formatter = new Formatter();
+        formatter.Options = params.Opts;
+        const outputText = formatter.Reformat(params.Text, 0);
+        const outputLines = outputText.trimEnd().split(EolString(params.Opts));
+
+        const generalComplexity = Math.max(params.Opts.MaxInlineLength, params.Opts.MaxCompactArrayComplexity,
+            params.Opts.MaxTableRowComplexity);
+
+        // Look at each line of the output separately, counting the nesting level in each.
+        for (const line of outputLines) {
+            const content = SkipPrefixAndIndent(params.Opts, line);
+
+            // Keep a running total of opens vs closes.  Since Formatter treats empty arrays and objects as complexity
+            // zero just like primitives, we don't update nestLevel until we see something other than an empty.
+            let openCount = 0;
+            let nestLevel = 0;
+            let topLevelCommaSeen = false;
+            let multipleTopLevelItems = false;
+            for (let i = 0; i < content.length; ++i) {
+                const ch = content[i];
+                switch (ch) {
+                    case ' ':
+                    case '\t':
+                        break;
+                    case '[':
+                    case '{':
+                        multipleTopLevelItems ||= (topLevelCommaSeen && openCount==0);
+                        openCount += 1;
+                        break;
+                    case ']':
+                    case '}':
+                        openCount -= 1;
+                        nestLevel = Math.max(nestLevel, openCount);
+                        break;
+                    default:
+                        multipleTopLevelItems ||= (topLevelCommaSeen && openCount==0);
+                        if (ch==',')
+                            topLevelCommaSeen ||= (openCount==0);
+                        nestLevel = Math.max(nestLevel, openCount);
+                        break;
+                }
+            }
+
+            // If there were multiple top-level items on the line, this must be a compact array case.  Comments mess
+            // with the "top level" heuristic though.
+            if (multipleTopLevelItems && params.Opts.CommentPolicy != CommentPolicy.Preserve) {
+                expect(nestLevel).toBeLessThanOrEqual(params.Opts.MaxCompactArrayComplexity);
+                continue;
+            }
+
+            // Otherwise, we can't actually tell if it's a compact array, table, or inline by looking at just the one line.
+            expect(nestLevel).toBeLessThanOrEqual(generalComplexity);
         }
     });
 });
@@ -175,6 +232,13 @@ function GenerateOptions(): FracturedJsonOptions[] {
     opts.MaxInlineLength = 0;
     opts.MaxCompactArrayComplexity = 0;
     opts.MaxTableRowComplexity = 2;
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.MaxInlineLength = 10;
+    opts.MaxCompactArrayComplexity = 10;
+    opts.MaxTableRowComplexity = 10;
+    opts.MaxTotalLineLength = 1000;
     optsList.push(opts);
 
     opts = new FracturedJsonOptions();
