@@ -651,7 +651,7 @@ export class Formatter {
                 this._buffer.Add(newline);
 
             if (item.Value.indexOf(newline)>=0) {
-                const normalizedComment = Formatter.NormalizeMultilineComment(item.Value, Number.MAX_VALUE);
+                const normalizedComment = Formatter.NormalizeMultilineComment(item.Value, item.InputPosition.Column);
                 for (const line of normalizedComment)
                     this._buffer.Add(line, newline);
                 return true;

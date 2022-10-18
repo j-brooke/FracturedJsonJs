@@ -133,6 +133,33 @@ describe("Universal Tests", () => {
             expect(nestLevel).toBeLessThanOrEqual(generalComplexity);
         }
     });
+
+    test.each(GenerateUniversalParams())("Repeated formatting is stable", (params) => {
+        const mainFormatter = new Formatter();
+        mainFormatter.Options = params.Opts;
+        const initialOutput = mainFormatter.Reformat(params.Text, 0);
+
+        const crunchOutput = mainFormatter.Minify(initialOutput);
+        const backToStartOutput1 = mainFormatter.Reformat(crunchOutput, 0);
+
+        // We formatted it, then minified that, then reformatted that.  It should be the same.
+        expect(backToStartOutput1).toBe(initialOutput);
+
+        const expandOptions = new FracturedJsonOptions();
+        expandOptions.AlwaysExpandDepth = Number.MAX_VALUE;
+        expandOptions.CommentPolicy = CommentPolicy.Preserve;
+        expandOptions.PreserveBlankLines = true;
+
+        const expandFormatter = new Formatter();
+        expandFormatter.Options = expandOptions;
+
+        const expandOutput = expandFormatter.Reformat(crunchOutput, 0);
+        const backToStartOutput2 = mainFormatter.Reformat(expandOutput, 0);
+
+        // For good measure, we took the minified output and expanded it as much as possible, and then formatted that.
+        // Again, it should be the same as our original formatting.
+        expect(backToStartOutput2).toBe(initialOutput);
+    });
 });
 
 
