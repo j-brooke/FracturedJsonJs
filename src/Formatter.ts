@@ -96,7 +96,7 @@ export class Formatter {
             item.ValueLength =
                 this._pads.StartLen(item.Type, padType)
                 + this._pads.EndLen(item.Type, padType)
-                + item.Children.map(ch => ch.MinimumTotalLength).reduce((p:number, c:number) => p+c)
+                + item.Children.map(ch => ch.MinimumTotalLength).reduce((p:number, c:number) => p+c, 0)
                 + Math.max(0, this._pads.CommaLen * (item.Children.length-1));
         }
 
@@ -196,7 +196,7 @@ export class Formatter {
         if (template.IsRowDataCompatible)
             avgItemWidth += template.TotalLength;
         else
-            avgItemWidth += (item.Children.map(ch => ch.MinimumTotalLength).reduce((p:number,c:number) => p+c)
+            avgItemWidth += (item.Children.map(ch => ch.MinimumTotalLength).reduce((p:number,c:number) => p+c, 0)
                 / item.Children.length);
         if (avgItemWidth * this.Options.MinCompactArrayRowItems > likelyAvailableLineSpace)
             return false;
@@ -712,7 +712,7 @@ export class Formatter {
 
     private static IndexOfLastElement(itemList: JsonItem[]) {
         for (let i = itemList.length-1; i>=0; --i) {
-            if (this.IsCommentOrBlankLine(itemList[i].Type))
+            if (!this.IsCommentOrBlankLine(itemList[i].Type))
                 return i;
         }
 

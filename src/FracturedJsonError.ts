@@ -5,7 +5,7 @@ export class FracturedJsonError extends Error {
     constructor(message?: string, pos?: InputPosition) {
         const msgWithPos = (pos)? `${message} at idx=${pos.Index}, row=${pos.Row}, col=${pos.Column}`
             : message;
-        super(message);
+        super(msgWithPos);
         this.InputPosition = pos;
     }
 }

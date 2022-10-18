@@ -26,12 +26,25 @@ export class Parser {
                 return topLevelItems;
 
             const item = this.ParseItem(enumerator);
-            topLevelItems.push(item);
+            const isComment = item.Type == JsonItemType.BlockComment || item.Type == JsonItemType.LineComment;
+            const isBlank = item.Type == JsonItemType.BlankLine;
 
-            const isElement = item.Type != JsonItemType.BlankLine && item.Type != JsonItemType.BlockComment
-                && item.Type != JsonItemType.LineComment;
-            if (isElement && stopAfterFirstElem)
-                return topLevelItems;
+            if (isBlank) {
+                if (this.Options.PreserveBlankLines)
+                    topLevelItems.push(item);
+            }
+            else if (isComment) {
+                if (this.Options.CommentPolicy == CommentPolicy.TreatAsError)
+                    throw new FracturedJsonError("Comments not allowed with current options",
+                        item.InputPosition);
+                if (this.Options.CommentPolicy == CommentPolicy.Preserve)
+                    topLevelItems.push(item);
+            }
+            else {
+                topLevelItems.push(item);
+                if (stopAfterFirstElem)
+                    return topLevelItems;
+            }
         }
     }
 
