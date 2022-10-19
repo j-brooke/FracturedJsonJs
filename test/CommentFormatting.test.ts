@@ -1,5 +1,7 @@
 ﻿import {Formatter} from "../out/Formatter";
 import {CommentPolicy} from "../out/CommentPolicy";
+// @ts-ignore
+import {DoInstancesLineUp} from "./Helpers";
 
 describe("Comment formatting tests", () => {
     test("Pre and Post comments stay with elems", () => {
@@ -218,12 +220,3 @@ describe("Comment formatting tests", () => {
         expect(output.length).not.toContain("//");
     });
 });
-
-/**
- * Tests that the first occurence of the substring occurs at the same index in each line, if the line contains it.
- */
-function DoInstancesLineUp(lines: string[], substring: string): boolean {
-    const indices = lines.map(str => str.indexOf(substring))
-        .filter(num => num >= 0);
-    return indices.length==0 || indices.every(num => num == indices[0]);
-}

@@ -72,7 +72,7 @@ describe("Universal Tests", () => {
                 continue;
 
             // We'll consider it a single element if there's no more than one comma.
-            const commaCount = content.replace(/[^,]/g, "").length;
+            const commaCount = content.match(/,/g)?.length ?? 0;
             expect(commaCount).toBeLessThanOrEqual(1);
         }
     });

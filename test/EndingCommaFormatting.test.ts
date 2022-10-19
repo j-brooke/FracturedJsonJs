@@ -24,7 +24,7 @@ describe("Ending comma formatting tests", () => {
         expect(outputLines.length).toBe(6);
 
         // There should only be one comma - between the 1 and false.
-        const commaCount = output.replace(/[^,]/g, "").length;
+        const commaCount = output.match(/,/g)?.length ?? 0;
         expect(commaCount).toBe(1);
     });
 
@@ -50,7 +50,7 @@ describe("Ending comma formatting tests", () => {
         expect(output).toContain("[1    ]");
 
         // There should only be one comma - between the 1 and 2.
-        const commaCount = output.replace(/[^,]/g, "").length;
+        const commaCount = output.match(/,/g)?.length ?? 0;
         expect(commaCount).toBe(1);
     });
 });

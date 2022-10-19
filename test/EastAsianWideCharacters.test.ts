@@ -1,6 +1,8 @@
 ﻿// @ts-ignore
 import * as eaw from 'eastasianwidth';
 import {Formatter} from "../src/Formatter";
+// @ts-ignore
+import {DoInstancesLineUp} from "./Helpers";
 
 describe("East Asian wide character tests", function () {
     test("Pads wide chars correctly", () => {
@@ -38,13 +40,4 @@ describe("East Asian wide character tests", function () {
 
 function WideCharStringLength(str: string): number {
     return eaw.length(str);
-}
-
-/**
- * Tests that the first occurence of the substring occurs at the same index in each line, if the line contains it.
- */
-function DoInstancesLineUp(lines: string[], substring: string): boolean {
-    const indices = lines.map(str => str.indexOf(substring))
-        .filter(num => num >= 0);
-    return indices.length==0 || indices.every(num => num == indices[0]);
 }
