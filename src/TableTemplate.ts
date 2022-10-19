@@ -203,7 +203,7 @@ export class TableTemplate {
         else if (this.IsFormattableNumber) {
             this.CompositeValueLength = this._maxDigitsBeforeDecimal
                 + this._maxDigitsAfterDecimal
-                + ((this._maxDigitsBeforeDecimal > 0)? 1 : 0);
+                + ((this._maxDigitsAfterDecimal > 0)? 1 : 0);
 
             // Allow room for null.
             if (this._dataContainsNull && this.CompositeValueLength < 4)
