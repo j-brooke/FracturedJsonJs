@@ -8,6 +8,7 @@ import {BracketPaddingType} from "./BracketPaddingType";
 import {TableTemplate} from "./TableTemplate";
 import {FracturedJsonError} from "./FracturedJsonError";
 import {Parser} from "./Parser";
+import {ConvertDataToDom} from "./ConvertDataToDom";
 
 /**
  * Class that writes JSON data in a human-friendly format.  Comments are optionally supported.  While many options
@@ -15,17 +16,31 @@ import {Parser} from "./Parser";
  * reasonable output for any JSON doc.
  */
 export class Formatter {
+    /**
+     * Settings to control the appearance of the output and what sort of input is permissible.
+     */
     Options: FracturedJsonOptions = new FracturedJsonOptions();
+
+    /**
+     * Function that measures strings for alignment purposes.  The number returned should be the number of space-
+     * equivalent units.  This is provided for use with East Asian languages, where some single characters
+     * are rendered as taking up two spaces.  It could also be important for unicode surrogate.
+     */
     StringLengthFunc: (str:string) => number = Formatter.StringLengthByCharCount;
 
+    /**
+     * The default string length function for use with StringLengthFunc.  It returns str.length.
+     */
     static StringLengthByCharCount(str:string): number {
         return str.length;
     }
 
     /**
      * Reads in JSON text (or JSON-with-comments), and returns a nicely-formatted string of the same content.
+     * @param jsonText a JSON document in text form that should be reformatted
+     * @param startingDepth starting indentation level for output
      */
-    Reformat(jsonText: string, startingDepth: number): string {
+    Reformat(jsonText: string, startingDepth: number = 0): string {
         const buffer = new StringBuilderBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
@@ -35,6 +50,30 @@ export class Formatter {
         return buffer.AsString();
     }
 
+    /**
+     * Writes the serialized object as a nicely-formatted string.
+     * @param element the data to be written as JSON
+     * @param startingDepth starting indentation level for output
+     * @param recursionLimit nesting level at which we give up and assume we were given a circular reference
+     */
+    Serialize(element: any, startingDepth: number = 0, recursionLimit:number = 100): string | undefined {
+        const buffer = new StringBuilderBuffer();
+
+        const docModel = ConvertDataToDom(element, undefined, recursionLimit);
+        if (!docModel)
+            return undefined;
+
+        this.FormatTopLevel([docModel], startingDepth, buffer);
+
+        return buffer.AsString();
+    }
+
+    /**
+     * Writes a version of the given JSON (or JSON-with-comments) text that has all unnecessary space removed while
+     * still preserving comments and blank lines, if that's what the settings require.
+     * @param jsonText a JSON document in text form that should be reformatted
+     * @constructor
+     */
     Minify(jsonText:string): string {
         const buffer = new StringBuilderBuffer();
         const parser = new Parser();
@@ -72,6 +111,11 @@ export class Formatter {
         this._buffer = new StringBuilderBuffer();
     }
 
+    /**
+     * Runs StringLengthFunc on every part of every item and stores the value.  Also computes the total minimum
+     * length, which for arrays and objects includes their child lengths.  We're going to use these values a lot,
+     * and we don't want to run StringLengthFunc more than needed in case it's expensive.
+     */
     private ComputeItemLengths(item: JsonItem): void {
         const newline = "\n";
         for (const child of item.Children)

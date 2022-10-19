@@ -27,7 +27,7 @@ describe("Universal Tests", () => {
         if (formatter.Options.CommentPolicy == CommentPolicy.Preserve)
             formatter.Options.CommentPolicy = CommentPolicy.Remove;
 
-        const outputText = formatter.Reformat(params.Text, 0);
+        const outputText = formatter.Reformat(params.Text);
 
         JSON.parse(outputText);
     });
@@ -36,7 +36,7 @@ describe("Universal Tests", () => {
     test.each(GenerateUniversalParams())("All strings exist", (params) => {
         const formatter = new Formatter();
         formatter.Options = params.Opts;
-        const outputText = formatter.Reformat(params.Text, 0);
+        const outputText = formatter.Reformat(params.Text);
 
         let startPos = 0;
         while (true) {
@@ -61,7 +61,7 @@ describe("Universal Tests", () => {
     test.each(GenerateUniversalParams())("Max length respected", (params) => {
         const formatter = new Formatter();
         formatter.Options = params.Opts;
-        const outputText = formatter.Reformat(params.Text, 0);
+        const outputText = formatter.Reformat(params.Text);
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
         for (const line of outputLines) {
@@ -81,7 +81,7 @@ describe("Universal Tests", () => {
     test.each(GenerateUniversalParams())("Max inline complexity respected", (params) => {
         const formatter = new Formatter();
         formatter.Options = params.Opts;
-        const outputText = formatter.Reformat(params.Text, 0);
+        const outputText = formatter.Reformat(params.Text);
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
         const generalComplexity = Math.max(params.Opts.MaxInlineLength, params.Opts.MaxCompactArrayComplexity,
@@ -137,10 +137,10 @@ describe("Universal Tests", () => {
     test.each(GenerateUniversalParams())("Repeated formatting is stable", (params) => {
         const mainFormatter = new Formatter();
         mainFormatter.Options = params.Opts;
-        const initialOutput = mainFormatter.Reformat(params.Text, 0);
+        const initialOutput = mainFormatter.Reformat(params.Text);
 
         const crunchOutput = mainFormatter.Minify(initialOutput);
-        const backToStartOutput1 = mainFormatter.Reformat(crunchOutput, 0);
+        const backToStartOutput1 = mainFormatter.Reformat(crunchOutput);
 
         // We formatted it, then minified that, then reformatted that.  It should be the same.
         expect(backToStartOutput1).toBe(initialOutput);
@@ -153,8 +153,8 @@ describe("Universal Tests", () => {
         const expandFormatter = new Formatter();
         expandFormatter.Options = expandOptions;
 
-        const expandOutput = expandFormatter.Reformat(crunchOutput, 0);
-        const backToStartOutput2 = mainFormatter.Reformat(expandOutput, 0);
+        const expandOutput = expandFormatter.Reformat(crunchOutput);
+        const backToStartOutput2 = mainFormatter.Reformat(expandOutput);
 
         // For good measure, we took the minified output and expanded it as much as possible, and then formatted that.
         // Again, it should be the same as our original formatting.
