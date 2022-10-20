@@ -1,5 +1,5 @@
-﻿import {Formatter} from "../out/Formatter";
-import {CommentPolicy} from "../out/CommentPolicy";
+﻿import {Formatter} from "../src";
+import {CommentPolicy} from "../src";
 
 // Tests to make sure commas are only where they're supposed to be.
 describe("Ending comma formatting tests", () => {

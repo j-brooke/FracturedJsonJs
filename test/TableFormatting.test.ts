@@ -1,9 +1,9 @@
 ﻿// Tests about formatting things in tables, so that corresponding properties and array positions are neatly
 // lined up, when possible.
-import {Formatter} from "../src/Formatter";
+import {Formatter} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
-import {CommentPolicy} from "../src/CommentPolicy";
+import {CommentPolicy} from "../src";
 
 describe("Table formatting tests", () => {
     test("Nested elements line up", () => {

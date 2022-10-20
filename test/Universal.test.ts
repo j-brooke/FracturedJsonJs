@@ -1,8 +1,8 @@
 ﻿import {readdirSync, readFileSync} from "fs";
-import {FracturedJsonOptions} from "../src/FracturedJsonOptions";
-import {CommentPolicy} from "../src/CommentPolicy";
-import {Formatter} from "../src/Formatter";
-import {EolStyle} from "../out/EolStyle";
+import {FracturedJsonOptions} from "../src";
+import {CommentPolicy} from "../src";
+import {Formatter} from "../src";
+import {EolStyle} from "../src";
 
 /**
  * Tests that should pass with ANY input and ANY settings, within a few constraints.  These aren't particularly

@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../src/Formatter";
+﻿import {Formatter} from "../src";
 
 
 describe("Length and complexity tests", () => {

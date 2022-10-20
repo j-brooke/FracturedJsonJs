@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../src/Formatter";
+﻿import {Formatter} from "../src";
 import {readdirSync, readFileSync} from "fs";
 
 // Tests Formatter's Serialize method for writing JSON straight from objects/arrays/strings/etc.

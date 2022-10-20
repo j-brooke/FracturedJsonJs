@@ -1,5 +1,5 @@
-﻿import {Formatter} from "../out/Formatter";
-import {CommentPolicy} from "../out/CommentPolicy";
+﻿import {Formatter} from "../src";
+import {CommentPolicy} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
 

@@ -2,7 +2,7 @@
   "name": "fracturedjsonjs",
   "version": "3.0.0",
   "description": "JSON formatter that produces human-readable but fairly compact output",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "scripts": {
     "test": "jest",
     "build": "tsc"
@@ -16,14 +16,15 @@
     "formatter",
     "pretty printer",
     "beautifier",
-    "stringify"
+    "stringify",
+    "compact"
   ],
   "author": "j-brooke",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/j-brooke/FracturedJsonJs/issues"
   },
-  "homepage": "https://github.com/j-brooke/FracturedJsonJs#readme",
+  "homepage": "https://j-brooke.github.io/FracturedJson/",
   "devDependencies": {
     "@types/jest": "^29.1.2",
     "eastasianwidth": "^0.2.0",

@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../src/Formatter";
+﻿import {Formatter} from "../src";
 
 describe('Number formatting tests', function () {
     test("Inline array doesn't justify numbers", () => {

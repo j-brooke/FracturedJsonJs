@@ -1,6 +1,6 @@
 ﻿// @ts-ignore
 import * as eaw from 'eastasianwidth';
-import {Formatter} from "../src/Formatter";
+import {Formatter} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
 

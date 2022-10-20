@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../out/Formatter";
+﻿import {Formatter} from "../src";
 
 // Tests for the AlwaysExpandDepth setting.
 describe("Always Expand Formatting Tests", () => {

@@ -1,7 +1,7 @@
 ﻿
 // Unit tests for various padding functionality and maybe indentation
 import {readFileSync} from "fs";
-import {Formatter} from "../src/Formatter";
+import {Formatter} from "../src";
 
 describe("Pad formatting tests", () => {
     test("No spaces anywhere", () => {

@@ -1,7 +1,7 @@
 ﻿import {Parser} from "../src/Parser";
-import {JsonItemType} from "../out/JsonItemType";
-import {FracturedJsonOptions} from "../out/FracturedJsonOptions";
-import {CommentPolicy} from "../out/CommentPolicy";
+import {JsonItemType} from "../src/JsonItemType";
+import {FracturedJsonOptions} from "../src";
+import {CommentPolicy} from "../src";
 
 
 describe("Parser Tests", () => {

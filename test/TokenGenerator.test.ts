@@ -1,6 +1,6 @@
 ﻿import {TokenGenerator} from "../src/TokenGenerator";
 import {TokenType} from "../src/TokenType";
-import {FracturedJsonError} from "../src/FracturedJsonError";
+import {FracturedJsonError} from "../src";
 import {JsonToken} from "../src/JsonToken";
 
 // Tests for the TokenGenerator.
