@@ -88,21 +88,33 @@ npm i fracturedjsonjs
 ## Usage
 
 ```js
-const { Formatter, EolStyle } = require("fracturedjsonjs");
+const { Formatter, CommentPolicy, FracturedJsonOptions, EolStyle } = require('fracturedjsonjs');
 
-const jsObj = [[1, 2, 3], [4, 16, 64]];
+// For examples of the options, see
+// https://github.com/j-brooke/FracturedJson/wiki/Options
+const options = new FracturedJsonOptions();
+options.MaxTotalLineLength = 80;
+options.MaxInlineComplexity = 1;
+options.JsonEolStyle = EolStyle.Crlf;
 
 const formatter = new Formatter();
-formatter.maxInlineLength = 110;
-formatter.maxInlineComplexity = 1;
-formatter.maxCompactArrayComplexity = 1;
-formatter.tableObjectMinimumSimilarity = 30;
-formatter.tableArrayMinimumSimilarity = 50;
-formatter.jsonEolStyle = EolStyle.Crlf;
+formatter.Options = options;
 
-// See the wiki page for a complete list of settings, with examples.
-// https://github.com/j-brooke/FracturedJson/wiki/Options
+// Use Serialize to go from JavaScript data to JSON text.
+const inputObj = [[1, 2, 3], [4, 16, 64]];
+const textFromObj = formatter.Serialize(inputObj);
 
-const jsonString = formatter.serialize(jsObj);
-console.log(jsonString);
+console.log("From inputObj:");
+console.log(textFromObj);
+
+// Comments aren't allowed by default, but they're easy to enable.
+formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+formatter.Options.IndentSpaces = 2;
+
+// Use Reformat to go from JSON text to JSON text.
+const inputText = '{ "a": [1, 2, 3] /* <a */, "b": [null, 5] /* <b */ }';
+const textFromText = formatter.Reformat(inputText);
+
+console.log("From inputText:");
+console.log(textFromText);
 ```
