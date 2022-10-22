@@ -634,9 +634,8 @@ describe("Parser Tests", () => {
         const input = "[ 1, 2 ],[ 3, 4 ]";
 
         const parser = new Parser();
-        const docModel = parser.ParseTopLevel(input, true);
 
-        expect(docModel.length).toBe(1);
+        expect(() => parser.ParseTopLevel(input, true)).toThrowError();
     });
 });
 

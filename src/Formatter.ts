@@ -44,7 +44,7 @@ export class Formatter {
         const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
-        const docModel = parser.ParseTopLevel(jsonText, false);
+        const docModel = parser.ParseTopLevel(jsonText, true);
         this.FormatTopLevel(docModel, startingDepth, buffer);
 
         return buffer.AsString();
@@ -78,7 +78,7 @@ export class Formatter {
         const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
-        const docModel = parser.ParseTopLevel(jsonText, false);
+        const docModel = parser.ParseTopLevel(jsonText, true);
         this.MinifyTopLevel(docModel, buffer);
 
         return buffer.AsString();

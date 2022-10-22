@@ -21,6 +21,7 @@ export class Parser {
     private ParseTopLevelFromEnum(enumerator: TokenEnumerator, stopAfterFirstElem: boolean): JsonItem[] {
         const topLevelItems: JsonItem[] = [];
 
+        let topLevelElemSeen = false;
         while (true) {
             if (!enumerator.MoveNext())
                 return topLevelItems;
@@ -41,9 +42,11 @@ export class Parser {
                     topLevelItems.push(item);
             }
             else {
+                if (stopAfterFirstElem && topLevelElemSeen)
+                    throw new FracturedJsonError("Unexpected start of second top level element",
+                        item.InputPosition);
                 topLevelItems.push(item);
-                if (stopAfterFirstElem)
-                    return topLevelItems;
+                topLevelElemSeen = true;
             }
         }
     }
