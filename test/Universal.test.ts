@@ -149,6 +149,7 @@ describe("Universal Tests", () => {
         expandOptions.AlwaysExpandDepth = Number.MAX_VALUE;
         expandOptions.CommentPolicy = CommentPolicy.Preserve;
         expandOptions.PreserveBlankLines = true;
+        expandOptions.DontJustifyNumbers = true;
 
         const expandFormatter = new Formatter();
         expandFormatter.Options = expandOptions;

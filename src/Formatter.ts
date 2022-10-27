@@ -185,11 +185,19 @@ export class Formatter {
      * The array/object might be formatted inline, compact multiline, table, or expanded, according to circumstances.
      */
     private FormatContainer(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
+        // Try to inline or compact-multiline format, as long as we're deeper than AlwaysExpandDepth.  Of course,
+        // there may be other disqualifying factors that are discovered along the way.
         if (depth > this.Options.AlwaysExpandDepth) {
             if (this.FormatContainerInline(item, depth, includeTrailingComma))
                 return;
             if (this.FormatContainerCompactMultiline(item, depth, includeTrailingComma))
                 return;
+        }
+
+        // Allow table formatting at the specified depth, too.  So if this is a root level array and
+        // AlwaysExpandDepth=0, we can table format it.  But if AlwaysExpandDepth=1, we can't format the root
+        // as a table, since a table's children are always inlined (and thus not expanded).
+        if (depth >= this.Options.AlwaysExpandDepth) {
             if (this.FormatContainerTable(item, depth, includeTrailingComma))
                 return;
         }

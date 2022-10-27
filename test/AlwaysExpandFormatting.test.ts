@@ -1,4 +1,6 @@
 ﻿import {Formatter} from "../src";
+// @ts-ignore
+import {DoInstancesLineUp} from "./Helpers";
 
 // Tests for the AlwaysExpandDepth setting.
 describe("Always Expand Formatting Tests", () => {
@@ -33,5 +35,19 @@ describe("Always Expand Formatting Tests", () => {
 
         // If we force expanding at depth 1, we'll get lots of lines.
         expect(outputLines.length).toBe(10);
+    });
+
+    test("AlwaysExpandDepth doesn't prevent table formatting", () => {
+        const input = "[ [1, 22, 9 ], [333, 4, 9 ] ]";
+
+        const formatter = new Formatter();
+        formatter.Options.AlwaysExpandDepth = 0;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        expect(outputLines.length).toBe(4);
+        expect(DoInstancesLineUp(outputLines, ",")).toBeTruthy();
+        expect(DoInstancesLineUp(outputLines, "9")).toBeTruthy();
     });
 });
