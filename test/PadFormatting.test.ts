@@ -23,4 +23,30 @@ describe("Pad formatting tests", () => {
 
         expect(output).not.toContain(" ");
     });
+
+    test("SimpleBracketPadding works for tables", () => {
+        const input = "[[1, 2],[3, 4]]";
+
+        // Limit the complexity to make sure we format this as a table, but set SimpleBracketPadding to true.
+        const formatter = new Formatter();
+        formatter.Options.MaxInlineComplexity = 1;
+        formatter.Options.SimpleBracketPadding = true;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // There should be spaces between the brackets and the numbers.
+        expect(outputLines.length).toBe(4);
+        expect(outputLines[1]).toContain("[ 1, 2 ]");
+        expect(outputLines[2]).toContain("[ 3, 4 ]");
+
+        formatter.Options.SimpleBracketPadding = false;
+        output = formatter.Reformat(input, 0);
+        outputLines = output.trimEnd().split('\n');
+
+        // There should NOT be spaces between the brackets and the numbers.
+        expect(outputLines.length).toBe(4);
+        expect(outputLines[1]).toContain("[1, 2]");
+        expect(outputLines[2]).toContain("[3, 4]");
+    });
 });

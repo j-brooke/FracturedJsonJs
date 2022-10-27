@@ -32,7 +32,7 @@ export class TableTemplate {
     PrefixCommentLength: number = 0;
     MiddleCommentLength: number = 0;
     PostfixCommentLength: number = 0;
-    PadType: BracketPaddingType = BracketPaddingType.Empty;
+    PadType: BracketPaddingType = BracketPaddingType.Simple;
     IsFormattableNumber: boolean = false;
     CompositeValueLength: number = 0;
     TotalLength: number = 0;
