@@ -13,11 +13,13 @@
   },
   "keywords": [
     "JSON",
+    "JSONC",
     "formatter",
     "pretty printer",
     "beautifier",
     "stringify",
-    "compact"
+    "compact",
+    "comments"
   ],
   "author": "j-brooke",
   "license": "MIT",
