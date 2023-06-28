@@ -44,8 +44,7 @@ export class StringJoinBuffer implements IBuffer {
         if (this._trimTrailingWhitespace)
             line = line.trimEnd();
 
-        this._docBuff.push(line);
-        this._docBuff.push(eolString);
+        this._docBuff.push(line + eolString);
         this._lineBuff = [];
     }
 }
