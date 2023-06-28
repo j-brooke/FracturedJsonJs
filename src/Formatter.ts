@@ -41,12 +41,13 @@ export class Formatter {
      * @param startingDepth starting indentation level for output
      */
     Reformat(jsonText: string, startingDepth: number = 0): string {
-        const buffer = new StringJoinBuffer();
+        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
         this.FormatTopLevel(docModel, startingDepth, buffer);
 
+        buffer.Flush();
         return buffer.AsString();
     }
 
@@ -57,7 +58,7 @@ export class Formatter {
      * @param recursionLimit nesting level at which we give up and assume we were given a circular reference
      */
     Serialize(element: any, startingDepth: number = 0, recursionLimit:number = 100): string | undefined {
-        const buffer = new StringJoinBuffer();
+        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
 
         const docModel = ConvertDataToDom(element, undefined, recursionLimit);
         if (!docModel)
@@ -65,6 +66,7 @@ export class Formatter {
 
         this.FormatTopLevel([docModel], startingDepth, buffer);
 
+        buffer.Flush();
         return buffer.AsString();
     }
 
@@ -75,16 +77,17 @@ export class Formatter {
      * @constructor
      */
     Minify(jsonText:string): string {
-        const buffer = new StringJoinBuffer();
+        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
         this.MinifyTopLevel(docModel, buffer);
 
+        buffer.Flush();
         return buffer.AsString();
     }
 
-    private _buffer:IBuffer = new StringJoinBuffer();
+    private _buffer:IBuffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
     private _pads:PaddedFormattingTokens =
         new PaddedFormattingTokens(new FracturedJsonOptions(), Formatter.StringLengthByCharCount);
 
@@ -97,7 +100,7 @@ export class Formatter {
             this.FormatItem(item, startingDepth, false);
         }
 
-        this._buffer = new StringJoinBuffer();
+        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
     }
 
     private MinifyTopLevel(docModel: JsonItem[], buffer: IBuffer) {
@@ -108,7 +111,7 @@ export class Formatter {
         for (const item of docModel)
             atStartOfNewLine = this.MinifyItem(item, atStartOfNewLine);
 
-        this._buffer = new StringJoinBuffer();
+        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
     }
 
     /**
@@ -220,7 +223,7 @@ export class Formatter {
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
         this.InlineElement(item, includeTrailingComma);
-        this._buffer.Add(this._pads.EOL);
+        this._buffer.EndLine(this._pads.EOL);
 
         return true;
     }
@@ -267,7 +270,7 @@ export class Formatter {
                 + ((template.IsRowDataCompatible)? template.TotalLength : child.MinimumTotalLength);
 
             if (remainingLineSpace < spaceNeededForNext) {
-                this._buffer.Add(this._pads.EOL, this.Options.PrefixString, this._pads.Indent(depthAfterColon+1));
+                this._buffer.EndLine(this._pads.EOL).Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon+1));
                 remainingLineSpace = availableLineSpace;
             }
 
@@ -280,7 +283,7 @@ export class Formatter {
         }
 
         // The previous line won't have ended yet, so do a line feed and indent before the closing bracket.
-        this._buffer.Add(this._pads.EOL, this.Options.PrefixString, this._pads.Indent(depthAfterColon),
+        this._buffer.EndLine(this._pads.EOL).Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon),
             this._pads.End(item.Type, BracketPaddingType.Empty));
 
         this.StandardFormatEnd(item, includeTrailingComma);
@@ -329,7 +332,7 @@ export class Formatter {
             return false;
 
         const depthAfterColon = this.StandardFormatStart(item, depth);
-        this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty), this._pads.EOL);
+        this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty)).EndLine(this._pads.EOL);
 
         // Take note of the position of the last actual element, for comma decisions.  The last element
         // might not be the last item.
@@ -347,7 +350,7 @@ export class Formatter {
 
             this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon+1));
             this.InlineTableRowSegment(template, rowItem, (i<lastElementIndex), true);
-            this._buffer.Add(this._pads.EOL)
+            this._buffer.EndLine(this._pads.EOL)
         }
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon),
@@ -363,7 +366,7 @@ export class Formatter {
      */
     private FormatContainerExpanded(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
         const depthAfterColon = this.StandardFormatStart(item, depth);
-        this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty), this._pads.EOL);
+        this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty)).EndLine(this._pads.EOL);
 
         const lastElementIndex = Formatter.IndexOfLastElement(item.Children);
         for (let i=0; i<item.Children.length; ++i)
@@ -381,11 +384,11 @@ export class Formatter {
         const commentRows = Formatter.NormalizeMultilineComment(item.Value, item.InputPosition.Column);
 
         for (const line of commentRows)
-            this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth), line, this._pads.EOL);
+            this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth), line).EndLine(this._pads.EOL);
     }
 
     private FormatBlankLine(): void {
-        this._buffer.Add(this.Options.PrefixString, this._pads.EOL);
+        this._buffer.Add(this.Options.PrefixString).EndLine(this._pads.EOL);
     }
 
     /**
@@ -394,7 +397,7 @@ export class Formatter {
     private FormatInlineElement(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
         this.InlineElement(item, includeTrailingComma);
-        this._buffer.Add(this._pads.EOL);
+        this._buffer.EndLine(this._pads.EOL);
     }
 
     /**
@@ -432,10 +435,10 @@ export class Formatter {
 
         // If the middle comment requires multiple lines, start a new line and indent everything after this.
         const commentRows = Formatter.NormalizeMultilineComment(item.MiddleComment, Number.MAX_VALUE);
-        this._buffer.Add(this._pads.EOL);
+        this._buffer.EndLine(this._pads.EOL);
 
         for (const row of commentRows)
-            this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth+1), row, this._pads.EOL);
+            this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth+1), row).EndLine(this._pads.EOL);
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth+1));
         return depth + 1;
@@ -452,7 +455,7 @@ export class Formatter {
             this._buffer.Add(this._pads.Comment, item.PostfixComment);
         if (includeTrailingComma && !item.IsPostCommentLineStyle)
             this._buffer.Add(this._pads.Comma);
-        this._buffer.Add(this._pads.EOL);
+        this._buffer.EndLine(this._pads.EOL);
     }
 
     /**

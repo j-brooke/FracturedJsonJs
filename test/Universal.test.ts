@@ -161,6 +161,21 @@ describe("Universal Tests", () => {
         // Again, it should be the same as our original formatting.
         expect(backToStartOutput2).toBe(initialOutput);
     });
+
+    test.each(GenerateUniversalParams())("No trailing whitespace when option set", (params) => {
+        const modifiedOptions = Object.assign({}, params.Opts);
+        modifiedOptions.OmitTrailingWhitespace = true;
+
+        const formatter = new Formatter();
+        formatter.Options = modifiedOptions;
+        const outputText = formatter.Reformat(params.Text);
+        const outputLines = outputText.trimEnd().split(EolString(params.Opts));
+
+        for (const line of outputLines) {
+            const trimmedLine = line.trimEnd();
+            expect(line).toBe(trimmedLine);
+        }
+    });
 });
 
 

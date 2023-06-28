@@ -81,6 +81,14 @@ export class FracturedJsonOptions
     CommentPadding: boolean = true;
 
     /**
+     * If true, there won't be any spaces or tabs at the end of lines.  Normally there are a variety of cases where
+     * whitespace can be created or preserved at the ends of lines.  The most noticeable case is when
+     * CommaPadding is true.  Setting this to true gets rid of all of that (including inside multi-
+     * line comments).
+     */
+    OmitTrailingWhitespace: boolean = false;
+
+    /**
      * If true, numbers won't be right-aligned with matching precision.
      */
     DontJustifyNumbers: boolean = false;
