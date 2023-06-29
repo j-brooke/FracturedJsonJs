@@ -3,5 +3,7 @@
  * stream or whatever.
  */
 export interface IBuffer {
-    Add(...values: string[]): void;
+    Add(...values: string[]): IBuffer;
+    EndLine(eolString: string): IBuffer;
+    Flush(): IBuffer;
 }
