@@ -1,5 +1,12 @@
 # FracturedJsonJs Change Log
 
+## 3.1.0
+
+### Added
+
+* New setting: `OmitTrailingWhitespace`.  When true, the output JSON won't have any trailing spaces or tabs.  This is probably the preferred behavior in most cases, but the default is `false` for backward compatibility.
+
+
 ## 3.0.0
 
 ### Features
@@ -22,14 +29,14 @@
 ### Changed
 
 * All of the settings are now bundled in a single class, `FracturedJsonOptions`.  They are now set all at once to `Formatter.Options` rather than being separate properties of `Formatter`.
-* Method names have changed.  Use `Reformat` when you're providing a JSON text, or `Serialize` when providing JavaScript values.
+* Method names have changed.  Use `Reformat` when you're providing JSON text, or `Serialize` when providing JavaScript values.
 
 
 ## 2.2.1
 
 ### Bug Fixes
 
-Fixed https://github.com/j-brooke/FracturedJsonJs/issues/5 - an exception was being thrown when the input data contained `undefined`.  This is only relevant to the JavaScript version.  In fixing this I tried to mimic the behavior of `JSON.stringify()`, and succeded in two out of three cases:
+Fixed https://github.com/j-brooke/FracturedJsonJs/issues/5 - an exception was being thrown when the input data contained `undefined`.  This is only relevant to the JavaScript version.  In fixing this I tried to mimic the behavior of `JSON.stringify()`, and succeeded in two out of three cases:
 
 * If an array contains `undefined`, `null` is used instead.
 * If an object property's value is `undefined`, the property is skipped.  (Property names can't be `undefined`.)
