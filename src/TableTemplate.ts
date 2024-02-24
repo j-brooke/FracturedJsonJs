@@ -87,6 +87,7 @@ export class TableTemplate {
 
     private readonly _pads: PaddedFormattingTokens;
     private readonly _allowReformattingNumbers;
+    private static readonly _trulyZeroValString = new RegExp("^-?[0.]+([eE].*)?$");
     private _maxDigitsBeforeDecimal: number = 0;
     private _maxDigitsAfterDecimal: number = 0;
     private _dataContainsNull: boolean = false;
@@ -170,14 +171,19 @@ export class TableTemplate {
         }
         else if (rowSegment.Type == JsonItemType.Number && this.IsFormattableNumber) {
             const maxChars = 15;
-            const normalizedVal = Number(rowSegment.Value).toString();
-            this.IsFormattableNumber = normalizedVal.length <= maxChars && normalizedVal.indexOf("e") < 0;
+            const parsedVal = Number(rowSegment.Value);
+            const normalizedStr = parsedVal.toString();
+            this.IsFormattableNumber = !isNaN(parsedVal)
+                && parsedVal !== Infinity && parsedVal !== -Infinity
+                && normalizedStr.length <= maxChars
+                && normalizedStr.indexOf("e") < 0
+                && (parsedVal!=0.0 || TableTemplate._trulyZeroValString.test(rowSegment.Value));
 
-            const indexOfDot = normalizedVal.indexOf(".");
+            const indexOfDot = normalizedStr.indexOf(".");
             this._maxDigitsBeforeDecimal = Math.max(this._maxDigitsBeforeDecimal,
-                (indexOfDot>=0)? indexOfDot : normalizedVal.length);
+                (indexOfDot>=0)? indexOfDot : normalizedStr.length);
             this._maxDigitsAfterDecimal = Math.max(this._maxDigitsAfterDecimal,
-                (indexOfDot>=0)? normalizedVal.length - indexOfDot - 1 : 0);
+                (indexOfDot>=0)? normalizedStr.length - indexOfDot - 1 : 0);
         }
     }
 

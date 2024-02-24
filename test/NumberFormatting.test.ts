@@ -97,4 +97,32 @@ describe('Number formatting tests', function () {
 
         expect(output.trimEnd()).toBe(expectedOutput);
     });
+
+    test("Overflow Double Invalidates Alignment", () => {
+        const input = "[1e500, 4.0]";
+        const expectedOutput = "[\n    1e500, 4.0  \n]";
+
+        // If a number is too big to fit in a 64-bit float, we shouldn't try to reformat its column/array.
+        // If we did, it would turn into "Infinity", isn't a valid JSON token.
+        const formatter = new Formatter();
+        formatter.Options.MaxInlineComplexity = -1;
+
+        let output = formatter.Reformat(input, 0);
+
+        expect(output.trimEnd()).toBe(expectedOutput);
+    });
+
+    test("Underflow Double Invalidates Alignment", () => {
+        const input = "[1e-500, 4.0]";
+        const expectedOutput = "[\n    1e-500, 4.0   \n]";
+
+        // If a number is too small to fit in a 64-bit float, we shouldn't try to reformat its column/array.
+        // Doing so would change it to zero, which might be an unwelcome loss of precision.
+        const formatter = new Formatter();
+        formatter.Options.MaxInlineComplexity = -1;
+
+        let output = formatter.Reformat(input, 0);
+
+        expect(output.trimEnd()).toBe(expectedOutput);
+    });
 });
