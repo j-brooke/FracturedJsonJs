@@ -1,6 +1,7 @@
 ﻿/**
- * Collects spacing information about the columns of a potential table.  Each TableTemplate corresponds do
- * a part of a row, and they're nested recursively to match the JSON structure.
+ * Collects spacing information about the columns of a potential table.  Each TableTemplate corresponds to
+ * a part of a row, and they're nested recursively to match the JSON structure.  (Also used in complex multiline
+ * arrays to try to fit them all nicely together.)
  *
  * Say you have an object/array where each item would make a nice row all by itself.  We want to try to line up
  * everything about it - comments, prop names, values.  If the row items are themselves objects/arrays, ideally
@@ -19,6 +20,11 @@ export class TableTemplate {
      * The property name in the table that this segment matches up with.
      */
     LocationInParent: string | undefined = undefined;
+
+    /**
+     * The type of values in the column, if they're uniform.  There's some wiggle-room here: for instance,
+     * true and false have different JsonItemTypes but are considered the same type for table purposes.
+     */
     Type: JsonItemType = JsonItemType.Null;
 
     /**
@@ -34,9 +40,29 @@ export class TableTemplate {
     MiddleCommentLength: number = 0;
     PostfixCommentLength: number = 0;
     PadType: BracketPaddingType = BracketPaddingType.Simple;
+
+    /**
+     * True if this is a number column and we're allowed by settings to normalize numbers (rewrite them with the same
+     * precision), and if none of the numbers have too many digits or require scientific notation.
+     */
     AllowNumberNormalization: boolean = false;
+
+    /**
+     * True if this column contains only numbers and nulls.  Number columns are formatted specially, depending on
+     * settings.
+     */
     IsNumberList: boolean = false;
+
+    /**
+     * Length of the value for this template when things are complicated.  For arrays and objects, it's the sum of
+     * all the child templates' lengths, plus brackets and commas and such.  For number lists, it's the space
+     * required to align them as appropriate.
+     */
     CompositeValueLength: number = 0;
+
+    /**
+     * Length of the entire template, including space for the value, property name, and all comments.
+     */
     TotalLength: number = 0;
 
     /**
@@ -79,11 +105,16 @@ export class TableTemplate {
         return false;
     }
 
+    /**
+     * Added the number, properly aligned and possibly reformatted, according to our measurements.
+     * This assumes that the segment is a number list, and therefore that the item is a number or null.
+     */
     FormatNumber(buffer: IBuffer, item: JsonItem): void {
         const formatType = (this._numberListAlignment===NumberListAlignment.Normalize && !this.AllowNumberNormalization)
             ? NumberListAlignment.Left
             : this._numberListAlignment;
 
+        // The easy cases.  Use the value exactly as it was in the source doc.
         switch (formatType) {
             case NumberListAlignment.Left:
                 buffer.Add(item.Value, this._pads.Spaces(this.SimpleValueLength - item.ValueLength));
@@ -97,7 +128,9 @@ export class TableTemplate {
         let maxDigAfter: number;
         let valueStr: string;
         let valueLength: number;
+
         if (formatType === NumberListAlignment.Normalize) {
+            // Normalize case - rewrite the number with the appropriate precision.
             if (item.Type === JsonItemType.Null) {
                 buffer.Add(this._pads.Spaces(this._maxDigBeforeDecNorm - item.ValueLength), item.Value,
                     this._pads.Spaces(this.CompositeValueLength - this._maxDigBeforeDecNorm));
@@ -111,6 +144,7 @@ export class TableTemplate {
             valueLength = valueStr.length;
         }
         else {
+            // Decimal case - line up the decimals (or E's) but leave the value exactly as it was in the source.
             maxDigBefore = this._maxDigBeforeDecRaw;
             maxDigAfter = this._maxDigAfterDecRaw;
             valueStr = item.Value;
@@ -187,6 +221,7 @@ export class TableTemplate {
         if (rowSegment.Complexity >= 2)
             this.PadType = BracketPaddingType.Complex;
 
+        // Everything after this is moot if the column doesn't have a uniform type.
         if (!this.IsRowDataCompatible)
             return;
 
@@ -220,6 +255,9 @@ export class TableTemplate {
             }
         }
         else if (rowSegment.Type === JsonItemType.Number && this.IsNumberList) {
+            // So far, everything in this column is a number (or null).  We need to reevaluate whether we're allowed
+            // to normalize the numbers - write them all with the same number of digits after the decimal point.
+            // We also need to take some measurements for both contingencies.
             const maxChars = 15;
             const parsedVal = Number(rowSegment.Value);
             const normalizedStr = parsedVal.toString();
@@ -229,6 +267,8 @@ export class TableTemplate {
                 && normalizedStr.indexOf("e") < 0
                 && (parsedVal!==0.0 || TableTemplate._trulyZeroValString.test(rowSegment.Value));
 
+            // Measure the number of digits before and after the decimal point if we write it as a standard,
+            // non-scientific notation number.
             const indexOfDotNorm = normalizedStr.indexOf('.');
             this._maxDigBeforeDecNorm =
                 Math.max(this._maxDigBeforeDecNorm, (indexOfDotNorm >= 0) ? indexOfDotNorm : normalizedStr.length);
