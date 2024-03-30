@@ -43,7 +43,7 @@ export class PaddedFormattingTokens {
         this._comma = (opts.CommaPadding) ? ", " : ",";
         this._colon = (opts.ColonPadding) ? ": " : ":";
         this._comment = (opts.CommentPadding) ? " " : "";
-        this._eol = (opts.JsonEolStyle==EolStyle.Crlf) ? "\r\n" : "\n";
+        this._eol = (opts.JsonEolStyle===EolStyle.Crlf) ? "\r\n" : "\n";
 
         this._arrStartLen = this._arrStart.map(strLenFunc);
         this._arrEndLen = this._arrEnd.map(strLenFunc);
@@ -86,11 +86,11 @@ export class PaddedFormattingTokens {
     }
 
     Start(elemType: JsonItemType, bracketType: BracketPaddingType): string {
-        return (elemType==JsonItemType.Array)? this.ArrStart(bracketType) : this.ObjStart(bracketType);
+        return (elemType===JsonItemType.Array)? this.ArrStart(bracketType) : this.ObjStart(bracketType);
     }
 
     End(elemType: JsonItemType, bracketType: BracketPaddingType): string {
-        return (elemType==JsonItemType.Array)? this.ArrEnd(bracketType) : this.ObjEnd(bracketType);
+        return (elemType===JsonItemType.Array)? this.ArrEnd(bracketType) : this.ObjEnd(bracketType);
     }
 
     ArrStartLen(type: BracketPaddingType): number {
@@ -107,11 +107,11 @@ export class PaddedFormattingTokens {
     }
 
     StartLen(elemType: JsonItemType, bracketType: BracketPaddingType): number {
-        return (elemType==JsonItemType.Array)? this.ArrStartLen(bracketType) : this.ObjStartLen(bracketType);
+        return (elemType===JsonItemType.Array)? this.ArrStartLen(bracketType) : this.ObjStartLen(bracketType);
     }
 
     EndLen(elemType: JsonItemType, bracketType: BracketPaddingType): number {
-        return (elemType==JsonItemType.Array)? this.ArrEndLen(bracketType) : this.ObjEndLen(bracketType);
+        return (elemType===JsonItemType.Array)? this.ArrEndLen(bracketType) : this.ObjEndLen(bracketType);
     }
 
     Indent(level: number): string {

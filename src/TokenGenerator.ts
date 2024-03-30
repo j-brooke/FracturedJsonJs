@@ -108,7 +108,7 @@ function ProcessKeyword(state: ScannerState, keyword: string, type: TokenType): 
         if (state.AtEnd())
             state.Throw("Unexpected end of input while processing keyword");
         state.Advance(false);
-        if (state.Current() != keyword.charCodeAt(i))
+        if (state.Current() !== keyword.charCodeAt(i))
             state.Throw("Unexpected keyword");
     }
 
@@ -125,9 +125,9 @@ function ProcessComment(state: ScannerState): JsonToken {
 
     state.Advance(false);
     let isBlockComment = false;
-    if (state.Current()==_codeStar)
+    if (state.Current()===_codeStar)
         isBlockComment = true;
-    else if (state.Current()!=_codeSlash)
+    else if (state.Current()!==_codeSlash)
         state.Throw("Bad character for start of comment");
 
     state.Advance(false);
@@ -143,7 +143,7 @@ function ProcessComment(state: ScannerState): JsonToken {
         }
 
         const ch = state.Current();
-        if (ch==_codeLF) {
+        if (ch===_codeLF) {
             state.NewLine();
             if (!isBlockComment)
                 return state.MakeTokenFromBuffer(TokenType.LineComment, true);
@@ -151,10 +151,10 @@ function ProcessComment(state: ScannerState): JsonToken {
         }
 
         state.Advance(false);
-        if (ch == _codeSlash && lastCharWasAsterisk)
+        if (ch === _codeSlash && lastCharWasAsterisk)
             return state.MakeTokenFromBuffer(TokenType.BlockComment);
 
-        lastCharWasAsterisk = (ch==_codeStar);
+        lastCharWasAsterisk = (ch===_codeStar);
     }
 }
 
@@ -183,7 +183,7 @@ function ProcessString(state: ScannerState): JsonToken {
         if (lastCharBeganEscape) {
             if (!isLegalAfterBackslash(ch))
                 state.Throw("Bad escaped character in string");
-            if (ch == _codeLittleU)
+            if (ch === _codeLittleU)
                 expectedHexCount = 4;
             lastCharBeganEscape = false;
             state.Advance(false);
@@ -194,9 +194,9 @@ function ProcessString(state: ScannerState): JsonToken {
             state.Throw("Control characters are not allowed in strings");
 
         state.Advance(false);
-        if (ch==_codeQuote)
+        if (ch===_codeQuote)
             return state.MakeTokenFromBuffer(TokenType.String);
-        if (ch==_codeBackSlash)
+        if (ch===_codeBackSlash)
             lastCharBeganEscape = true;
     }
 }
@@ -211,9 +211,9 @@ function ProcessNumber(state: ScannerState): JsonToken {
 
         switch (phase) {
             case NumberPhase.Beginning:
-                if (ch == _codeMinus)
+                if (ch === _codeMinus)
                     phase = NumberPhase.PastLeadingSign;
-                else if (ch == _codeZero)
+                else if (ch === _codeZero)
                     phase = NumberPhase.PastWhole;
                 else if (isDigit(ch))
                     phase = NumberPhase.PastFirstDigitOfWhole;
@@ -224,7 +224,7 @@ function ProcessNumber(state: ScannerState): JsonToken {
             case NumberPhase.PastLeadingSign:
                 if (!isDigit(ch))
                     handling = CharHandling.InvalidatesToken;
-                else if (ch == _codeZero)
+                else if (ch === _codeZero)
                     phase = NumberPhase.PastWhole;
                 else
                     phase = NumberPhase.PastFirstDigitOfWhole;
@@ -232,9 +232,9 @@ function ProcessNumber(state: ScannerState): JsonToken {
 
             // We've started with a 1-9 and more digits are welcome.
             case NumberPhase.PastFirstDigitOfWhole:
-                if (ch == _codeDecimal)
+                if (ch === _codeDecimal)
                     phase = NumberPhase.PastDecimalPoint;
-                else if (ch == _codeLittleE || ch == _codeBigE)
+                else if (ch === _codeLittleE || ch === _codeBigE)
                     phase = NumberPhase.PastE;
                 else if (!isDigit(ch))
                     handling = CharHandling.StartOfNewToken;
@@ -242,9 +242,9 @@ function ProcessNumber(state: ScannerState): JsonToken {
 
             // We started with a 0.  Another digit at this point would not be part of this token.
             case NumberPhase.PastWhole:
-                if (ch == _codeDecimal)
+                if (ch === _codeDecimal)
                     phase = NumberPhase.PastDecimalPoint;
-                else if (ch == _codeLittleE || ch == _codeBigE)
+                else if (ch === _codeLittleE || ch === _codeBigE)
                     phase = NumberPhase.PastE;
                 else
                     handling = CharHandling.StartOfNewToken;
@@ -258,7 +258,7 @@ function ProcessNumber(state: ScannerState): JsonToken {
                 break;
 
             case NumberPhase.PastFirstDigitOfFractional:
-                if (ch == _codeLittleE || ch == _codeBigE)
+                if (ch === _codeLittleE || ch === _codeBigE)
                     phase = NumberPhase.PastE;
                 else if (!isDigit(ch))
                     handling = CharHandling.StartOfNewToken;
@@ -266,7 +266,7 @@ function ProcessNumber(state: ScannerState): JsonToken {
 
             // An E must be followed by either a digit or +/-
             case NumberPhase.PastE:
-                if (ch == _codePlus || ch == _codeMinus)
+                if (ch === _codePlus || ch === _codeMinus)
                     phase = NumberPhase.PastExpSign;
                 else if (isDigit(ch))
                     phase = NumberPhase.PastFirstDigitOfExponent;
@@ -288,10 +288,10 @@ function ProcessNumber(state: ScannerState): JsonToken {
                 break;
         }
 
-        if (handling == CharHandling.InvalidatesToken)
+        if (handling === CharHandling.InvalidatesToken)
             state.Throw("Bad character while processing number");
 
-        if (handling == CharHandling.StartOfNewToken) {
+        if (handling === CharHandling.StartOfNewToken) {
             // We're done processing the number, and the enumerator is pointed to the character after it.
             return state.MakeTokenFromBuffer(TokenType.Number);
         }
@@ -379,7 +379,7 @@ function isLegalAfterBackslash(charCode:number): boolean {
 
 function isControl(charCode:number): boolean {
     return (charCode>=0x00 && charCode<=0x1F)
-        || (charCode == 0x7F)
+        || (charCode === 0x7F)
         || (charCode>=0x80 && charCode<=0x9F);
 }
 

@@ -146,29 +146,29 @@ export class TableTemplate {
      */
     private MeasureRowSegment(rowSegment: JsonItem): void {
         // Standalone comments and blank lines don't figure into template measurements
-        if (rowSegment.Type == JsonItemType.BlankLine || rowSegment.Type == JsonItemType.BlockComment
-            || rowSegment.Type == JsonItemType.LineComment)
+        if (rowSegment.Type === JsonItemType.BlankLine || rowSegment.Type === JsonItemType.BlockComment
+            || rowSegment.Type === JsonItemType.LineComment)
             return;
 
         // Make sure this rowSegment's type is compatible with the ones we've seen so far.  Null is compatible
         // with all types.  It the types aren't compatible, we can still align this element and its comments,
         // but not any children for arrays/objects.
-        if (rowSegment.Type == JsonItemType.False || rowSegment.Type == JsonItemType.True) {
-            this.IsRowDataCompatible &&= (this.Type == JsonItemType.True || this.Type == JsonItemType.Null);
+        if (rowSegment.Type === JsonItemType.False || rowSegment.Type === JsonItemType.True) {
+            this.IsRowDataCompatible &&= (this.Type === JsonItemType.True || this.Type === JsonItemType.Null);
             this.Type = JsonItemType.True;
             this.IsNumberList = false;
         }
-        else if (rowSegment.Type == JsonItemType.Number) {
-            this.IsRowDataCompatible &&= (this.Type == JsonItemType.Number || this.Type == JsonItemType.Null);
+        else if (rowSegment.Type === JsonItemType.Number) {
+            this.IsRowDataCompatible &&= (this.Type === JsonItemType.Number || this.Type === JsonItemType.Null);
             this.Type = JsonItemType.Number;
         }
-        else if (rowSegment.Type == JsonItemType.Null) {
+        else if (rowSegment.Type === JsonItemType.Null) {
             this._maxDigBeforeDecNorm = Math.max(this._maxDigBeforeDecNorm, this._pads.LiteralNullLen);
             this._maxDigBeforeDecRaw = Math.max(this._maxDigBeforeDecRaw, this._pads.LiteralNullLen);
         }
         else {
-            this.IsRowDataCompatible &&= (this.Type == rowSegment.Type || this.Type == JsonItemType.Null);
-            if (this.Type == JsonItemType.Null)
+            this.IsRowDataCompatible &&= (this.Type === rowSegment.Type || this.Type === JsonItemType.Null);
+            if (this.Type === JsonItemType.Null)
                 this.Type = rowSegment.Type;
             this.IsNumberList = false;
         }
@@ -190,7 +190,7 @@ export class TableTemplate {
         if (!this.IsRowDataCompatible)
             return;
 
-        if (rowSegment.Type == JsonItemType.Array) {
+        if (rowSegment.Type === JsonItemType.Array) {
             // For each row in this rowSegment, find or create this TableTemplate's child template for
             // the that array index, and then measure recursively.
             for (let i = 0; i < rowSegment.Children.length; ++i) {
@@ -199,7 +199,7 @@ export class TableTemplate {
                 this.Children[i].MeasureRowSegment(rowSegment.Children[i]);
             }
         }
-        else if (rowSegment.Type == JsonItemType.Object) {
+        else if (rowSegment.Type === JsonItemType.Object) {
             // If this object has multiple children with the same property name, which is allowed by the JSON standard
             // although it's hard to imagine anyone would deliberately do it, we can't format it as part of a table.
             if (this.ContainsDuplicateKeys(rowSegment.Children)) {
@@ -219,7 +219,7 @@ export class TableTemplate {
                 subTemplate.MeasureRowSegment(rowSegChild);
             }
         }
-        else if (rowSegment.Type == JsonItemType.Number && this.IsNumberList) {
+        else if (rowSegment.Type === JsonItemType.Number && this.IsNumberList) {
             const maxChars = 15;
             const parsedVal = Number(rowSegment.Value);
             const normalizedStr = parsedVal.toString();
@@ -227,7 +227,7 @@ export class TableTemplate {
                 && parsedVal !== Infinity && parsedVal !== -Infinity
                 && normalizedStr.length <= maxChars
                 && normalizedStr.indexOf("e") < 0
-                && (parsedVal!=0.0 || TableTemplate._trulyZeroValString.test(rowSegment.Value));
+                && (parsedVal!==0.0 || TableTemplate._trulyZeroValString.test(rowSegment.Value));
 
             const indexOfDotNorm = normalizedStr.indexOf('.');
             this._maxDigBeforeDecNorm =
@@ -278,7 +278,7 @@ export class TableTemplate {
     }
 
     private GetTemplateComplexity(): number {
-        if (this.Children.length == 0)
+        if (this.Children.length === 0)
             return 0;
         const childComplexities = this.Children.map(ch => ch.GetTemplateComplexity());
         return 1 + Math.max(...childComplexities);
@@ -290,12 +290,12 @@ export class TableTemplate {
     }
 
     private GetNumberFieldWidth(): number {
-        if (this._numberListAlignment == NumberListAlignment.Normalize && this.AllowNumberNormalization)
+        if (this._numberListAlignment === NumberListAlignment.Normalize && this.AllowNumberNormalization)
         {
             const normDecLen = (this._maxDigAfterDecNorm > 0) ? 1 : 0;
             return this._maxDigBeforeDecNorm + normDecLen + this._maxDigAfterDecNorm;
         }
-        else if (this._numberListAlignment == NumberListAlignment.Decimal)
+        else if (this._numberListAlignment === NumberListAlignment.Decimal)
         {
             const rawDecLen = (this._maxDigAfterDecRaw > 0) ? 1 : 0;
             return this._maxDigBeforeDecRaw + rawDecLen + this._maxDigAfterDecRaw;

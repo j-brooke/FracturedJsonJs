@@ -41,7 +41,7 @@ export function ConvertDataToDom(element:any, propName?: string, recursionLimit:
             ConvertDataToDom(ch, undefined, recursionLimit-1)
             ?? ConvertDataToDom(null, undefined, recursionLimit-1)!);
     }
-    else if (elementType == "object") {
+    else if (elementType === "object") {
         // In objects, undefined values (including anything that can't be converted) are omitted.
         item.Type = JsonItemType.Object;
         for (const kvp of Object.entries(element)) {

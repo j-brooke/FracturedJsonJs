@@ -152,7 +152,7 @@ export class Formatter {
             || item.PostfixComment.indexOf(newline) >= 0
             || item.Value.indexOf(newline) >= 0;
 
-        if (item.Type == JsonItemType.Array || item.Type == JsonItemType.Object) {
+        if (item.Type === JsonItemType.Array || item.Type === JsonItemType.Object) {
             const padType = Formatter.GetPaddingType(item);
             item.ValueLength =
                 this._pads.StartLen(item.Type, padType)
@@ -249,7 +249,7 @@ export class Formatter {
      * Returns true if the content was added
      */
     private FormatContainerCompactMultiline(item:JsonItem, depth:number, includeTrailingComma: boolean): boolean {
-        if (item.Type != JsonItemType.Array)
+        if (item.Type !== JsonItemType.Array)
             return false;
         if (item.Complexity > this.Options.MaxCompactArrayComplexity)
             return false;
@@ -353,11 +353,11 @@ export class Formatter {
         const lastElementIndex = Formatter.IndexOfLastElement(item.Children);
         for (let i=0; i<item.Children.length; ++i) {
             const rowItem = item.Children[i];
-            if (rowItem.Type == JsonItemType.BlankLine) {
+            if (rowItem.Type === JsonItemType.BlankLine) {
                 this.FormatBlankLine();
                 continue;
             }
-            if (rowItem.Type == JsonItemType.LineComment || rowItem.Type == JsonItemType.BlockComment) {
+            if (rowItem.Type === JsonItemType.LineComment || rowItem.Type === JsonItemType.BlockComment) {
                 this.FormatStandaloneComment(rowItem, depthAfterColon+1);
                 continue;
             }
@@ -438,7 +438,7 @@ export class Formatter {
         if (item.NameLength > 0)
             this._buffer.Add(item.Name, this._pads.Colon);
 
-        if (item.MiddleCommentLength == 0)
+        if (item.MiddleCommentLength === 0)
             return depth;
 
         // If there's a middle comment, we write it on the same line and move along.  Easy.
@@ -505,7 +505,7 @@ export class Formatter {
      * the item's comments (although it will include child elements' comments), or indentation.
      */
     private InlineElementRaw(item: JsonItem): void {
-        if (item.Type == JsonItemType.Array) {
+        if (item.Type === JsonItemType.Array) {
             const padType = Formatter.GetPaddingType(item);
             this._buffer.Add(this._pads.ArrStart(padType));
 
@@ -514,7 +514,7 @@ export class Formatter {
 
             this._buffer.Add(this._pads.ArrEnd(padType));
         }
-        else if (item.Type == JsonItemType.Object) {
+        else if (item.Type === JsonItemType.Object) {
             const padType = Formatter.GetPaddingType(item);
             this._buffer.Add(this._pads.ObjStart(padType));
 
@@ -548,8 +548,8 @@ export class Formatter {
                 this._pads.Spaces(template.MiddleCommentLength - item.MiddleCommentLength),
                 this._pads.Comment);
 
-        if (template.Children.length > 0 && item.Type != JsonItemType.Null) {
-            if (template.Type == JsonItemType.Array)
+        if (template.Children.length > 0 && item.Type !== JsonItemType.Null) {
+            if (template.Type === JsonItemType.Array)
                 this.InlineTableRawArray(template, item);
             else
                 this.InlineTableRawObject(template, item);
@@ -564,7 +564,7 @@ export class Formatter {
 
         // If there's a postfix line comment, the comma needs to happen first.  For block comments,
         // it would be better to put the comma after the comment.
-        const commaGoesBeforeComment = item.IsPostCommentLineStyle || item.PostfixCommentLength == 0;
+        const commaGoesBeforeComment = item.IsPostCommentLineStyle || item.PostfixCommentLength === 0;
         if (commaGoesBeforeComment) {
             // For internal row segments, there won't be trailing comments for any of the rows.  But
             // if this is a whole row, then there will be commas after all but the last one.  So,
@@ -596,8 +596,8 @@ export class Formatter {
     private InlineTableRawArray(template: TableTemplate, item: JsonItem) {
         this._buffer.Add(this._pads.ArrStart(template.PadType));
         for (let i = 0; i < template.Children.length; ++i) {
-            const isLastInTemplate = (i == template.Children.length - 1);
-            const isLastInArray = (i == item.Children.length -1);
+            const isLastInTemplate = (i === template.Children.length - 1);
+            const isLastInArray = (i === item.Children.length -1);
             const isPastEndOfArray = (i >= item.Children.length);
             const subTemplate = template.Children[i];
 
@@ -621,7 +621,7 @@ export class Formatter {
      */
     private InlineTableRawObject(template: TableTemplate, item: JsonItem): void {
         function MatchingChild(temp: TableTemplate) {
-            return item.Children.find(ch => ch.Name == temp.LocationInParent);
+            return item.Children.find(ch => ch.Name === temp.LocationInParent);
         }
 
         // For every property in the template, find the corresponding element in this object, if any.
@@ -636,8 +636,8 @@ export class Formatter {
         for (let i=0; i < matches.length; ++i) {
             const subTemplate = matches[i].tt;
             const subItem = matches[i].ji;
-            const isLastInObject = (i == lastNonNullIdx);
-            const isLastInTemplate = (i == matches.length - 1);
+            const isLastInObject = (i === lastNonNullIdx);
+            const isLastInTemplate = (i === matches.length - 1);
             if (subItem) {
                 this.InlineTableRowSegment(subTemplate, subItem, !isLastInObject, false);
                 if (isLastInObject && !isLastInTemplate)
@@ -675,9 +675,9 @@ export class Formatter {
             this._buffer.Add(item.MiddleComment);
         }
 
-        if (item.Type == JsonItemType.Array || item.Type == JsonItemType.Object) {
+        if (item.Type === JsonItemType.Array || item.Type === JsonItemType.Object) {
             let closeBracket: string;
-            if (item.Type == JsonItemType.Array) {
+            if (item.Type === JsonItemType.Array) {
                 this._buffer.Add("[");
                 closeBracket = "]";
             }
@@ -700,21 +700,21 @@ export class Formatter {
             }
             this._buffer.Add(closeBracket);
         }
-        else if (item.Type == JsonItemType.BlankLine) {
+        else if (item.Type === JsonItemType.BlankLine) {
             // Make sure we're starting on a new line before inserting a blank line.  Otherwise some can be lost.
             if (!atStartOfNewLine)
                 this._buffer.Add(newline);
             this._buffer.Add(newline);
             return true;
         }
-        else if (item.Type == JsonItemType.LineComment) {
+        else if (item.Type === JsonItemType.LineComment) {
             // Make sure we start on a new line for the comment, so that it will definitely be parsed as standalone.
             if (!atStartOfNewLine)
                 this._buffer.Add(newline);
             this._buffer.Add(item.Value, newline);
             return true;
         }
-        else if (item.Type == JsonItemType.BlockComment) {
+        else if (item.Type === JsonItemType.BlockComment) {
             // Make sure we start on a new line for the comment, so that it will definitely be parsed as standalone.
             if (!atStartOfNewLine)
                 this._buffer.Add(newline);
@@ -743,7 +743,7 @@ export class Formatter {
     }
 
     private static GetPaddingType(arrOrObj: JsonItem): BracketPaddingType {
-        if (arrOrObj.Children.length==0)
+        if (arrOrObj.Children.length===0)
             return BracketPaddingType.Empty;
 
         return (arrOrObj.Complexity >= 2)? BracketPaddingType.Complex : BracketPaddingType.Simple;
@@ -789,6 +789,6 @@ export class Formatter {
     }
 
     private static IsCommentOrBlankLine(type: JsonItemType): boolean {
-        return type == JsonItemType.BlankLine || type == JsonItemType.BlockComment || type == JsonItemType.LineComment;
+        return type === JsonItemType.BlankLine || type === JsonItemType.BlockComment || type === JsonItemType.LineComment;
     }
 }
