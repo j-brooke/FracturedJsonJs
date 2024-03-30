@@ -1,4 +1,4 @@
-﻿import {EolStyle, Formatter, NumberListAlignment} from "../src";
+﻿import {EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment} from "../src";
 
 describe('Number formatting tests', function () {
     test("Inline array doesn't justify numbers", () => {
@@ -109,6 +109,34 @@ describe('Number formatting tests', function () {
         let output = formatter.Reformat(input, 0);
 
         expect(output.trimEnd()).toBe(expectedOutput);
+    });
+
+    test("AccurateCompositeLengthForNormalized", () => {
+        // Make sure the the inner TableTemplate is accurately reporting the CompositeLength.  Otherwise,
+        // the null row won't have the right number of spaces.
+        const inputRows = [
+            "[",
+            "    { \"a\": {\"val\": 12345} },",
+            "    { \"a\": {\"val\": 6.78901} },",
+            "    { \"a\": null },",
+            "    { \"a\": {\"val\": 1e500} }",
+            "]",
+        ];
+
+        const input = inputRows.join("");
+        const opts = new FracturedJsonOptions()
+        opts.MaxTotalLineLength = 40;
+        opts.JsonEolStyle = EolStyle.Lf;
+        opts.OmitTrailingWhitespace = true;
+        opts.NumberListAlignment = NumberListAlignment.Normalize;
+
+        const formatter = new Formatter();
+        formatter.Options = opts;
+        const output = formatter.Reformat(input, 0);
+        const outputRows = output.trimEnd().split('\n');
+
+        expect(outputRows.length).toBe(6);
+        expect(outputRows[2].length).toEqual(outputRows[3].length);
     });
 
     test("Left Align Matches Expected", () => {

@@ -12,6 +12,9 @@ export class PaddedFormattingTokens {
     get CommaLen() { return this._commaLen; };
     get ColonLen() { return this._colonLen; };
     get CommentLen() { return this._commentLen; };
+    get LiteralNullLen() { return this._literalNullLen; }
+    get LiteralTrueLen() { return this._literalTrueLen; }
+    get LiteralFalseLen() { return this._literalFalseLen; }
     get PrefixStringLen() { return this._prefixStringLen; };
     get DummyComma() { return this._dummyComma; };
 
@@ -62,6 +65,9 @@ export class PaddedFormattingTokens {
         this._commaLen = strLenFunc(this._comma);
         this._colonLen = strLenFunc(this._colon);
         this._commentLen = strLenFunc(this._comment);
+        this._literalNullLen = strLenFunc("null");
+        this._literalTrueLen = strLenFunc("true");
+        this._literalFalseLen = strLenFunc("false");
         this._prefixStringLen = strLenFunc(opts.PrefixString);
         this._dummyComma = " ".repeat(this._commaLen);
     }
@@ -134,6 +140,9 @@ export class PaddedFormattingTokens {
     private readonly _commaLen: number;
     private readonly _colonLen: number;
     private readonly _commentLen: number;
+    private readonly _literalNullLen: number;
+    private readonly _literalTrueLen: number;
+    private readonly _literalFalseLen: number;
     private readonly _prefixStringLen: number;
 
     private readonly _arrStart: string[];

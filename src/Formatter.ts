@@ -124,8 +124,22 @@ export class Formatter {
         for (const child of item.Children)
             this.ComputeItemLengths(child);
 
+        switch (item.Type) {
+            case JsonItemType.Null:
+                item.ValueLength = this._pads.LiteralNullLen;
+                break;
+            case JsonItemType.True:
+                item.ValueLength = this._pads.LiteralTrueLen;
+                break;
+            case JsonItemType.False:
+                item.ValueLength = this._pads.LiteralFalseLen;
+                break;
+            default:
+                item.ValueLength = this.StringLengthFunc(item.Value);
+                break;
+        }
+
         item.NameLength = this.StringLengthFunc(item.Name);
-        item.ValueLength = this.StringLengthFunc(item.Value);
         item.PrefixCommentLength = this.StringLengthFunc(item.PrefixComment);
         item.MiddleCommentLength = this.StringLengthFunc(item.MiddleComment);
         item.PostfixCommentLength = this.StringLengthFunc(item.PostfixComment);

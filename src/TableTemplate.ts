@@ -163,8 +163,8 @@ export class TableTemplate {
             this.Type = JsonItemType.Number;
         }
         else if (rowSegment.Type == JsonItemType.Null) {
-            this._maxDigBeforeDecNorm = Math.max(this._maxDigBeforeDecNorm, 4);
-            this._maxDigBeforeDecRaw = Math.max(this._maxDigBeforeDecRaw, 4);
+            this._maxDigBeforeDecNorm = Math.max(this._maxDigBeforeDecNorm, this._pads.LiteralNullLen);
+            this._maxDigBeforeDecRaw = Math.max(this._maxDigBeforeDecRaw, this._pads.LiteralNullLen);
         }
         else {
             this.IsRowDataCompatible &&= (this.Type == rowSegment.Type || this.Type == JsonItemType.Null);
@@ -290,15 +290,17 @@ export class TableTemplate {
     }
 
     private GetNumberFieldWidth(): number {
-        switch (this._numberListAlignment) {
-            case NumberListAlignment.Decimal:
-                const rawDecLen = (this._maxDigAfterDecRaw > 0)? 1 : 0;
-                return this._maxDigBeforeDecRaw + rawDecLen + this._maxDigAfterDecRaw;
-            case NumberListAlignment.Normalize:
-                const normDecLen = (this._maxDigAfterDecNorm > 0)? 1 : 0;
-                return this._maxDigBeforeDecNorm + normDecLen + this._maxDigAfterDecNorm;
-            default:
-                return this.SimpleValueLength;
+        if (this._numberListAlignment == NumberListAlignment.Normalize && this.AllowNumberNormalization)
+        {
+            const normDecLen = (this._maxDigAfterDecNorm > 0) ? 1 : 0;
+            return this._maxDigBeforeDecNorm + normDecLen + this._maxDigAfterDecNorm;
         }
+        else if (this._numberListAlignment == NumberListAlignment.Decimal)
+        {
+            const rawDecLen = (this._maxDigAfterDecRaw > 0) ? 1 : 0;
+            return this._maxDigBeforeDecRaw + rawDecLen + this._maxDigAfterDecRaw;
+        }
+
+        return this.SimpleValueLength;
     }
 }
