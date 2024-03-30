@@ -243,7 +243,7 @@ export class Formatter {
             return false;
 
         // If all items are alike, we'll want to format each element as if it were a table row.
-        const template = new TableTemplate(this._pads, !this.Options.DontJustifyNumbers);
+        const template = new TableTemplate(this._pads, this.Options.NumberListAlignment);
         template.MeasureTableRoot(item);
 
         const likelyAvailableLineSpace = this.AvailableLineSpace(depth + 1);
@@ -310,7 +310,7 @@ export class Formatter {
 
         // Create a helper object to measure how much space we'll need.  If this item's children aren't sufficiently
         // similar, IsRowDataCompatible will be false.
-        const template = new TableTemplate(this._pads, !this.Options.DontJustifyNumbers);
+        const template = new TableTemplate(this._pads, this.Options.NumberListAlignment);
         template.MeasureTableRoot(item);
         if (!template.IsRowDataCompatible)
             return false;
@@ -540,8 +540,8 @@ export class Formatter {
             else
                 this.InlineTableRawObject(template, item);
         }
-        else if (template.IsFormattableNumber && item.Type != JsonItemType.Null) {
-            this._buffer.Add(template.FormatNumber(item.Value));
+        else if (template.IsNumberList) {
+            template.FormatNumber(this._buffer, item);
         }
         else {
             this.InlineElementRaw(item);

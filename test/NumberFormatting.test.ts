@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../src";
+﻿import {EolStyle, Formatter, NumberListAlignment} from "../src";
 
 describe('Number formatting tests', function () {
     test("Inline array doesn't justify numbers", () => {
@@ -37,21 +37,6 @@ describe('Number formatting tests', function () {
         // Since this is table formatting, each column is consistent, but not siblings in the same array.
         const formatter = new Formatter();
         formatter.Options.MaxInlineComplexity = -1;
-
-        let output = formatter.Reformat(input, 0);
-
-        expect(output.trimEnd()).toBe(expectedOutput);
-    });
-
-    test("Don't justify option respected", () => {
-        const input = "[1, 2.1, 3, -99]";
-        const expectedOutput = "[\n    1  , 2.1, 3  , -99\n]";
-
-        // Here, it's formatted as a compact multiline array (but not really multiline).  But since we're telling it
-        // not to justify numbers, they're treated like text: left-aligned and space-padded.
-        const formatter = new Formatter();
-        formatter.Options.MaxInlineComplexity = -1;
-        formatter.Options.DontJustifyNumbers = true;
 
         let output = formatter.Reformat(input, 0);
 
@@ -125,4 +110,84 @@ describe('Number formatting tests', function () {
 
         expect(output.trimEnd()).toBe(expectedOutput);
     });
+
+    test("Left Align Matches Expected", () => {
+        const expectedRows = [
+            "[",
+            "    [123.456 , 0      , 0   ],",
+            "    [234567.8, 0      , 0   ],",
+            "    [3       , 0.00000, 7e2 ],",
+            "    [null    , 2e-1   , 80e1],",
+            "    [5.6789  , 3.5e-1 , 0   ]",
+            "]"
+        ];
+
+        TestAlignment(NumberListAlignment.Left, expectedRows);
+    });
+
+    test("Right Align Matches Expected", () => {
+        const expectedRows = [
+            "[",
+            "    [ 123.456,       0,    0],",
+            "    [234567.8,       0,    0],",
+            "    [       3, 0.00000,  7e2],",
+            "    [    null,    2e-1, 80e1],",
+            "    [  5.6789,  3.5e-1,    0]",
+            "]"
+        ];
+
+        TestAlignment(NumberListAlignment.Right, expectedRows);
+    });
+
+    test("Decimal Align Matches Expected", () => {
+        const expectedRows = [
+            "[",
+            "    [   123.456 , 0      ,  0  ],",
+            "    [234567.8   , 0      ,  0  ],",
+            "    [     3     , 0.00000,  7e2],",
+            "    [  null     , 2e-1   , 80e1],",
+            "    [     5.6789, 3.5e-1 ,  0  ]",
+            "]"
+        ];
+
+        TestAlignment(NumberListAlignment.Decimal, expectedRows);
+    });
+
+    test("Normalize Align Matches Expected", () => {
+        const expectedRows = [
+            "[",
+            "    [   123.4560, 0.00,   0],",
+            "    [234567.8000, 0.00,   0],",
+            "    [     3.0000, 0.00, 700],",
+            "    [  null     , 0.20, 800],",
+            "    [     5.6789, 0.35,   0]",
+            "]"
+        ];
+
+        TestAlignment(NumberListAlignment.Normalize, expectedRows);
+    });
 });
+
+function TestAlignment(align: NumberListAlignment, expectedRows: string[]): void {
+    const inputRows = [
+        "[",
+        "    [ 123.456, 0, 0 ],",
+        "    [ 234567.8, 0, 0 ],",
+        "    [ 3, 0.00000, 7e2 ],",
+        "    [ null, 2e-1, 80e1 ],",
+        "    [ 5.6789, 3.5e-1, 0 ]",
+        "]",
+    ];
+    const input = inputRows.join("");
+
+    const formatter = new Formatter();
+    formatter.Options.MaxTotalLineLength = 60;
+    formatter.Options.JsonEolStyle = EolStyle.Lf;
+    formatter.Options.OmitTrailingWhitespace = true;
+    formatter.Options.NumberListAlignment = align;
+
+    const output = formatter.Reformat(input);
+    const outputRows = output!.trimEnd().split('\n');
+
+    expect(outputRows).toEqual(expectedRows);
+}
