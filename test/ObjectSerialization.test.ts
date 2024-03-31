@@ -1,4 +1,4 @@
-﻿import {Formatter} from "../src";
+﻿import {Formatter, NumberListAlignment} from "../src";
 import {readdirSync, readFileSync} from "fs";
 
 // Tests Formatter's Serialize method for writing JSON straight from objects/arrays/strings/etc.
@@ -24,7 +24,7 @@ describe("Object serialization tests", () => {
         const nativeMinified = JSON.stringify(element);
 
         const formatter = new Formatter();
-        formatter.Options.DontJustifyNumbers = true;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Left;
         const nicelyFormatted = formatter.Serialize(element, 0);
 
         if (!nativeMinified) {
@@ -61,7 +61,7 @@ describe("Object serialization tests", () => {
         // directly test.  We have to turn off justifying numbers because it can add digits, and we have to turn off
         // table formatting since it can reorder object children.
         const formatter = new Formatter();
-        formatter.Options.DontJustifyNumbers = true;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Left;
         formatter.Options.MaxTableRowComplexity = -1;
         const nicelyFormatted = formatter.Serialize(element, 0);
 

@@ -1,5 +1,6 @@
 ﻿import {EolStyle} from "./EolStyle";
 import {CommentPolicy} from "./CommentPolicy";
+import {NumberListAlignment} from "./NumberListAlignment";
 
 export class FracturedJsonOptions
 {
@@ -89,9 +90,10 @@ export class FracturedJsonOptions
     OmitTrailingWhitespace: boolean = false;
 
     /**
-     * If true, numbers won't be right-aligned with matching precision.
+     * Controls how lists or columns of numbers (possibly with nulls) are aligned, and whether their precision
+     * may be normalized.
      */
-    DontJustifyNumbers: boolean = false;
+    NumberListAlignment: NumberListAlignment = NumberListAlignment.Normalize;
 
     /**
      * Number of spaces to use per indent level.  If UseTabToIndent is true, spaces won't be used but

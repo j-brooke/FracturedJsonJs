@@ -1,8 +1,5 @@
 ﻿import {readdirSync, readFileSync} from "fs";
-import {FracturedJsonOptions} from "../src";
-import {CommentPolicy} from "../src";
-import {Formatter} from "../src";
-import {EolStyle} from "../src";
+import {CommentPolicy, EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment} from "../src";
 
 /**
  * Tests that should pass with ANY input and ANY settings, within a few constraints.  These aren't particularly
@@ -149,7 +146,7 @@ describe("Universal Tests", () => {
         expandOptions.AlwaysExpandDepth = Number.MAX_VALUE;
         expandOptions.CommentPolicy = CommentPolicy.Preserve;
         expandOptions.PreserveBlankLines = true;
-        expandOptions.DontJustifyNumbers = true;
+        expandOptions.NumberListAlignment = NumberListAlignment.Decimal;
 
         const expandFormatter = new Formatter();
         expandFormatter.Options = expandOptions;

@@ -27,18 +27,18 @@ export class Parser {
                 return topLevelItems;
 
             const item = this.ParseItem(enumerator);
-            const isComment = item.Type == JsonItemType.BlockComment || item.Type == JsonItemType.LineComment;
-            const isBlank = item.Type == JsonItemType.BlankLine;
+            const isComment = item.Type === JsonItemType.BlockComment || item.Type === JsonItemType.LineComment;
+            const isBlank = item.Type === JsonItemType.BlankLine;
 
             if (isBlank) {
                 if (this.Options.PreserveBlankLines)
                     topLevelItems.push(item);
             }
             else if (isComment) {
-                if (this.Options.CommentPolicy == CommentPolicy.TreatAsError)
+                if (this.Options.CommentPolicy === CommentPolicy.TreatAsError)
                     throw new FracturedJsonError("Comments not allowed with current options",
                         item.InputPosition);
-                if (this.Options.CommentPolicy == CommentPolicy.Preserve)
+                if (this.Options.CommentPolicy === CommentPolicy.Preserve)
                     topLevelItems.push(item);
             }
             else {
@@ -78,7 +78,7 @@ export class Parser {
      * returns.
      */
     private ParseArray(enumerator: TokenEnumerator): JsonItem {
-        if (enumerator.Current.Type != TokenType.BeginArray)
+        if (enumerator.Current.Type !== TokenType.BeginArray)
             throw new FracturedJsonError("Parser logic error", enumerator.Current.InputPosition);
 
         const startingInputPosition = enumerator.Current.InputPosition;
@@ -101,7 +101,7 @@ export class Parser {
             // If the token we're about to deal with isn't on the same line as an unplaced comment or is the end of the
             // array, this is our last chance to find a place for that comment.
             const unplacedCommentNeedsHome = unplacedComment
-                && (unplacedComment?.InputPosition.Row != token.InputPosition.Row || token.Type==TokenType.EndArray);
+                && (unplacedComment?.InputPosition.Row !== token.InputPosition.Row || token.Type===TokenType.EndArray);
             if (unplacedCommentNeedsHome) {
                 if (elemNeedingPostComment) {
                     // So there's a comment we don't have a place for yet, and a previous element that doesn't have
@@ -109,7 +109,7 @@ export class Parser {
                     // doesn't belong to whatever is coming up next.  So attach the unplaced comment to the old
                     // element.  (This is probably a comment at the end of a line after a comma.)
                     elemNeedingPostComment.PostfixComment = unplacedComment!.Value;
-                    elemNeedingPostComment.IsPostCommentLineStyle = (unplacedComment!.Type == JsonItemType.LineComment);
+                    elemNeedingPostComment.IsPostCommentLineStyle = (unplacedComment!.Type === JsonItemType.LineComment);
                 }
                 else {
                     // There's no old element to attach it to, so just add the comment as a standalone child.
@@ -121,19 +121,19 @@ export class Parser {
 
             // If the token we're about to deal with isn't on the same line as the last element, the new token obviously
             // won't be a postfix comment.
-            if (elemNeedingPostComment && elemNeedingPostEndRow != token.InputPosition.Row)
+            if (elemNeedingPostComment && elemNeedingPostEndRow !== token.InputPosition.Row)
                 elemNeedingPostComment = undefined;
 
             switch (token.Type) {
                 case TokenType.EndArray:
-                    if (commaStatus == CommaStatus.CommaSeen && !this.Options.AllowTrailingCommas)
+                    if (commaStatus === CommaStatus.CommaSeen && !this.Options.AllowTrailingCommas)
                         throw new FracturedJsonError("Array may not end with a comma with current options",
                             token.InputPosition);
                     endOfArrayFound = true;
                     break;
 
                 case TokenType.Comma:
-                    if (commaStatus != CommaStatus.ElementSeen)
+                    if (commaStatus !== CommaStatus.ElementSeen)
                         throw new FracturedJsonError("Unexpected comma in array", token.InputPosition);
                     commaStatus = CommaStatus.CommaSeen;
                     break;
@@ -145,9 +145,9 @@ export class Parser {
                     break;
 
                 case TokenType.BlockComment:
-                    if (this.Options.CommentPolicy == CommentPolicy.Remove)
+                    if (this.Options.CommentPolicy === CommentPolicy.Remove)
                         break;
-                    if (this.Options.CommentPolicy == CommentPolicy.TreatAsError)
+                    if (this.Options.CommentPolicy === CommentPolicy.TreatAsError)
                         throw new FracturedJsonError("Comments not allowed with current options",
                             token.InputPosition);
 
@@ -165,23 +165,23 @@ export class Parser {
                     }
 
                     // If this comment came after an element and before a comma, attach it to that element.
-                    if (elemNeedingPostComment && commaStatus == CommaStatus.ElementSeen) {
+                    if (elemNeedingPostComment && commaStatus === CommaStatus.ElementSeen) {
                         elemNeedingPostComment.PostfixComment = commentItem.Value;
                         elemNeedingPostComment.IsPostCommentLineStyle = false;
                         elemNeedingPostComment = undefined;
                         break;
                     }
 
-                    // Hold on to it for now.  Even if elemNeedingPostComment != null, it's possible that this comment
+                    // Hold on to it for now.  Even if elemNeedingPostComment !== null, it's possible that this comment
                     // should be attached to the next element, not that one.  (For instance, two elements on the same
                     // line, with a comment between them.)
                     unplacedComment = commentItem;
                     break;
 
                 case TokenType.LineComment:
-                    if (this.Options.CommentPolicy == CommentPolicy.Remove)
+                    if (this.Options.CommentPolicy === CommentPolicy.Remove)
                         break;
-                    if (this.Options.CommentPolicy == CommentPolicy.TreatAsError)
+                    if (this.Options.CommentPolicy === CommentPolicy.TreatAsError)
                         throw new FracturedJsonError("Comments not allowed with current options",
                             token.InputPosition);
 
@@ -212,7 +212,7 @@ export class Parser {
                 case TokenType.Number:
                 case TokenType.BeginArray:
                 case TokenType.BeginObject:
-                    if (commaStatus == CommaStatus.ElementSeen)
+                    if (commaStatus === CommaStatus.ElementSeen)
                         throw new FracturedJsonError("Comma missing while processing array", token.InputPosition);
 
                     const element = this.ParseItem(enumerator);
@@ -251,7 +251,7 @@ export class Parser {
      * returns.
      */
     private ParseObject(enumerator: TokenEnumerator): JsonItem {
-        if (enumerator.Current.Type != TokenType.BeginObject)
+        if (enumerator.Current.Type !== TokenType.BeginObject)
             throw new FracturedJsonError("Parser logic error", enumerator.Current.InputPosition);
 
         const startingInputPosition = enumerator.Current.InputPosition;
@@ -274,11 +274,11 @@ export class Parser {
             // We may have collected a bunch of stuff that should be combined into a single JsonItem.  If we have a
             // property name and value, then we're just waiting for potential postfix comments.  But it might be time
             // to bundle it all up and add it to childList before going on.
-            const isNewLine = (linePropValueEnds != token.InputPosition.Row);
-            const isEndOfObject = (token.Type == TokenType.EndObject);
-            const startingNextPropName = (token.Type == TokenType.String && phase == ObjectPhase.AfterComma);
+            const isNewLine = (linePropValueEnds !== token.InputPosition.Row);
+            const isEndOfObject = (token.Type === TokenType.EndObject);
+            const startingNextPropName = (token.Type === TokenType.String && phase === ObjectPhase.AfterComma);
             const isExcessPostComment = afterPropComment
-                && (token.Type==TokenType.BlockComment || token.Type==TokenType.LineComment);
+                && (token.Type===TokenType.BlockComment || token.Type===TokenType.LineComment);
             const needToFlush = propertyName && propertyValue
                 && (isNewLine || isEndOfObject || startingNextPropName || isExcessPostComment);
             if (needToFlush) {
@@ -308,7 +308,7 @@ export class Parser {
                 case TokenType.BlankLine:
                     if (!this.Options.PreserveBlankLines)
                         break;
-                    if (phase == ObjectPhase.AfterPropName || phase == ObjectPhase.AfterColon)
+                    if (phase === ObjectPhase.AfterPropName || phase === ObjectPhase.AfterColon)
                         break;
 
                     // If we were hanging on to comments to maybe be prefix comments, add them as standalone before
@@ -319,31 +319,31 @@ export class Parser {
                     break;
                 case TokenType.BlockComment:
                 case TokenType.LineComment:
-                    if (this.Options.CommentPolicy == CommentPolicy.Remove)
+                    if (this.Options.CommentPolicy === CommentPolicy.Remove)
                         break;
-                    if (this.Options.CommentPolicy == CommentPolicy.TreatAsError)
+                    if (this.Options.CommentPolicy === CommentPolicy.TreatAsError)
                         throw new FracturedJsonError("Comments not allowed with current options",
                             token.InputPosition);
-                    if (phase == ObjectPhase.BeforePropName || !propertyName) {
+                    if (phase === ObjectPhase.BeforePropName || !propertyName) {
                         beforePropComments.push(this.ParseSimple(token));
                     }
-                    else if (phase == ObjectPhase.AfterPropName || phase == ObjectPhase.AfterColon) {
+                    else if (phase === ObjectPhase.AfterPropName || phase === ObjectPhase.AfterColon) {
                         midPropComments.push(token);
                     }
                     else {
                         afterPropComment = this.ParseSimple(token);
-                        afterPropCommentWasAfterComma = (phase == ObjectPhase.AfterComma);
+                        afterPropCommentWasAfterComma = (phase === ObjectPhase.AfterComma);
                     }
                     break;
                 case TokenType.EndObject:
                     endOfObject = true;
                     break;
                 case TokenType.String:
-                    if (phase == ObjectPhase.BeforePropName || phase == ObjectPhase.AfterComma) {
+                    if (phase === ObjectPhase.BeforePropName || phase === ObjectPhase.AfterComma) {
                         propertyName = token;
                         phase = ObjectPhase.AfterPropName;
                     }
-                    else if (phase == ObjectPhase.AfterColon) {
+                    else if (phase === ObjectPhase.AfterColon) {
                         propertyValue = this.ParseItem(enumerator);
                         linePropValueEnds = enumerator.Current.InputPosition.Row;
                         phase = ObjectPhase.AfterPropValue;
@@ -359,7 +359,7 @@ export class Parser {
                 case TokenType.Number:
                 case TokenType.BeginArray:
                 case TokenType.BeginObject:
-                    if (phase != ObjectPhase.AfterColon)
+                    if (phase !== ObjectPhase.AfterColon)
                         throw new FracturedJsonError("Unexpected element while processing object",
                             token.InputPosition);
                     propertyValue = this.ParseItem(enumerator);
@@ -367,13 +367,13 @@ export class Parser {
                     phase = ObjectPhase.AfterPropValue;
                     break;
                 case TokenType.Colon:
-                    if (phase != ObjectPhase.AfterPropName)
+                    if (phase !== ObjectPhase.AfterPropName)
                         throw new FracturedJsonError("Unexpected colon while processing object",
                             token.InputPosition);
                     phase = ObjectPhase.AfterColon;
                     break;
                 case TokenType.Comma:
-                    if (phase != ObjectPhase.AfterPropValue)
+                    if (phase !== ObjectPhase.AfterPropValue)
                         throw new FracturedJsonError("Unexpected comma while processing object",
                             token.InputPosition);
                     phase = ObjectPhase.AfterComma;
@@ -384,7 +384,7 @@ export class Parser {
             }
         }
 
-        if (!this.Options.AllowTrailingCommas && phase == ObjectPhase.AfterComma)
+        if (!this.Options.AllowTrailingCommas && phase === ObjectPhase.AfterComma)
             throw new FracturedJsonError("Object may not end with comma with current options",
                 enumerator.Current.InputPosition);
 
@@ -422,7 +422,7 @@ export class Parser {
     }
 
     private static IsMultilineComment(item: JsonItem): boolean {
-        return item.Type==JsonItemType.BlockComment && item.Value.includes("\n");
+        return item.Type===JsonItemType.BlockComment && item.Value.includes("\n");
     }
 
     private static AttachObjectValuePieces(objItemList: JsonItem[], name: JsonToken, element: JsonItem,
@@ -435,7 +435,7 @@ export class Parser {
             let combined = "";
             for (let i=0; i<midComments.length; ++i) {
                 combined += midComments[i].Text;
-                if (i < midComments.length-1 || midComments[i].Type==TokenType.LineComment)
+                if (i < midComments.length-1 || midComments[i].Type===TokenType.LineComment)
                     combined += "\n";
             }
 
@@ -446,8 +446,8 @@ export class Parser {
         // Any others should be added as unattached comment items.
         if (beforeComments.length > 0) {
             const lastOfBefore = beforeComments.pop();
-            if (lastOfBefore!.Type == JsonItemType.BlockComment
-                && lastOfBefore!.InputPosition.Row == element.InputPosition.Row) {
+            if (lastOfBefore!.Type === JsonItemType.BlockComment
+                && lastOfBefore!.InputPosition.Row === element.InputPosition.Row) {
                 element.PrefixComment = lastOfBefore!.Value;
                 objItemList.push(...beforeComments);
             }
@@ -462,9 +462,9 @@ export class Parser {
         // Figure out if the first of the comments after the element should be attached to the element, and add
         // the others as unattached comment items.
         if (afterComment) {
-            if (!this.IsMultilineComment(afterComment) && afterComment.InputPosition.Row == valueEndingLine) {
+            if (!this.IsMultilineComment(afterComment) && afterComment.InputPosition.Row === valueEndingLine) {
                 element.PostfixComment = afterComment.Value;
-                element.IsPostCommentLineStyle = (afterComment.Type == JsonItemType.LineComment);
+                element.IsPostCommentLineStyle = (afterComment.Type === JsonItemType.LineComment);
             }
             else {
                 objItemList.push(afterComment);
