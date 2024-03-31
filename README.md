@@ -1,5 +1,9 @@
 # FracturedJsonJs
-JSON formatter that produces human-readable but fairly compact output.
+
+FracturedJson is a family of utilities that format [JSON data](https://www.json.org) in a way that's easy for
+humans to read, but fairly compact.  Arrays and objects are written on single lines, as long as they're
+neither too long nor too complex.  When several such lines are similar in structure, they're written with
+fields aligned like a table.  Long arrays are written with multiple items per line across multiple lines.
 
 This `npm` module is part of a family of FracturedJson tools.
 * [Home page and Browser-based Formatter](https://j-brooke.github.io/FracturedJson/)

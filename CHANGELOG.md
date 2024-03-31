@@ -1,5 +1,25 @@
 # FracturedJsonJs Change Log
 
+## 4.0.0
+
+### Features
+
+Replaced setting `DontJustifyNumbers` with a new enum, `NumberListAlignment`, to control how arrays or table columns of numbers are handled.
+
+* `Normalize` is the default and it behaves like previous versions when `DontJustifyNumbers==false`.  With it, number lists or columns are rewritten with the same number of digits after the decimal place.
+* `Decimal` lines the numbers up according to their decimal points, preserving the number exactly as it appeared in the input document.  For regular numbers this usually looks like `Normalize`, except with spaces padding out the extra decimal places instead of zeros.
+* `Left` lines up the values on the left, preserving the exactly values from the input document.
+* `Right` lines up the values on the right, preserving the exactly values from the input document.
+
+### Added
+
+New setting, `NumberListAlignment`.
+
+### Removed
+
+Removed setting `DontJustifyNumbers`.
+
+
 ## 3.1.1
 
 * Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/27) where numbers that overflow or underflow a 64-bit float could (depending on settings) be written to the output as `Infinity` or `0`.  In the overflow case, that caused output to be invalid JSON.  With this fix, FracturedJson recognizes that it can't safely reform numbers like this, and uses the exact number representation from the original document.
