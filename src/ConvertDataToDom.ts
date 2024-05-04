@@ -22,7 +22,7 @@ export function ConvertDataToDom(element:any, propName?: string, recursionLimit:
     // who knows what, so we need to parse it out again before dealing with it.
     if (element && element["toJSON"]) {
         const convertedElement = JSON.parse(JSON.stringify(element));
-        return ConvertDataToDom(convertedElement, undefined, recursionLimit-1);
+        return ConvertDataToDom(convertedElement, propName, recursionLimit-1);
     }
 
     // Let native JSON deal with escapes and such in the prop names.

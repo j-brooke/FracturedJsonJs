@@ -3,6 +3,7 @@ import {readdirSync, readFileSync} from "fs";
 
 // Tests Formatter's Serialize method for writing JSON straight from objects/arrays/strings/etc.
 describe("Object serialization tests", () => {
+    const someDate = new Date();
     const simpleTestCases: any[] = [
         null,
         undefined,
@@ -12,11 +13,12 @@ describe("Object serialization tests", () => {
         {},
         true,
         "",
-        new Date(),                      // Has custom toJSON function
-        Symbol.for("xyz"),           // symbol - JSON.stringify returns undefined
+        someDate,                                 // Has custom toJSON function
+        Symbol.for("xyz"),                   // symbol - JSON.stringify returns undefined
         () => 8,                         // function - JSON.stringify returns undefined
-        { a: "foo", b: false, c: NaN },  // NaN converts to undefined, so c is omitted
+        { a: "foo", b: false, c: NaN },           // NaN converts to null
         [[1,2,null], [4,null,6], {x:7,y:8,z:9}],
+        [someDate, {d: someDate}]                 // Nested stuff with toJSON functions
     ];
 
     // Serialize.  Then minify.  Then compared to the native minified version.

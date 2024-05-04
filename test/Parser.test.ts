@@ -625,6 +625,8 @@ describe("Parser Tests", () => {
         ["{ \"w\" \"foo\" }"],
         ["{ \"w\" {:1 }"],
         ["{ \"w\":1 \"x\":2 }"],
+        ["{ \"a\": 1, \"b\" }\n"],
+        ["{ \"a\": 1, \"b:\" }\n"]
     ])("Throws for malformed data", (input) => {
         const parser = new Parser();
         expect(() => parser.ParseTopLevel(input, false)).toThrow();

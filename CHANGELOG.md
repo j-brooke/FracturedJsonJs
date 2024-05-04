@@ -1,5 +1,12 @@
 # FracturedJsonJs Change Log
 
+## 4.0.1
+
+### Bug Fixes 
+
+* Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/32) where no exception is thrown when there's a property name but no value at the end of an object.
+* Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/31) where object contents with `toJSON` methods were missing their property names, results in invalid JSON.
+
 ## 4.0.0
 
 ### Features
@@ -21,6 +28,8 @@ Removed setting `DontJustifyNumbers`.
 
 
 ## 3.1.1
+
+### Bug Fixes
 
 * Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/27) where numbers that overflow or underflow a 64-bit float could (depending on settings) be written to the output as `Infinity` or `0`.  In the overflow case, that caused output to be invalid JSON.  With this fix, FracturedJson recognizes that it can't safely reform numbers like this, and uses the exact number representation from the original document.
 
