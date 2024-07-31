@@ -40,6 +40,11 @@ export function ConvertDataToDom(element:any, propName?: string, recursionLimit:
         item.Children = (element as any[]).map(ch =>
             ConvertDataToDom(ch, undefined, recursionLimit-1)
             ?? ConvertDataToDom(null, undefined, recursionLimit-1)!);
+        item.Children = [];
+        for (let i=0; i<element.length; ++i) {
+            item.Children[i] = ConvertDataToDom(element[i], undefined, recursionLimit-1)
+                ?? ConvertDataToDom(null, undefined, recursionLimit-1)!;
+        }
     }
     else if (elementType === "object") {
         // In objects, undefined values (including anything that can't be converted) are omitted.

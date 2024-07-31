@@ -1,5 +1,11 @@
 # FracturedJsonJs Change Log
 
+## 4.0.2
+
+### Bug Fixes
+
+* Fixed a [bug](https://github.com/j-brooke/FracturedJsonJs/issues/13) involving an exception serializing data containing a sparse array.
+
 ## 4.0.1
 
 ### Bug Fixes 

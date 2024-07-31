@@ -52,6 +52,14 @@ describe("Object serialization tests", () => {
         expect(() => formatter.Serialize(foo)).toThrowError();
     });
 
+    test("Handles sparse arrays", () => {
+        const arr = ['val1',,,'val2'];
+
+        const formatter = new Formatter();
+        const nice = formatter.Serialize(arr);
+        expect(nice).toBe('["val1", null, null, "val2"]\n');
+    });
+
     // Serialize.  Then minify.  Then compared to the native minified version.
     test.each(ReadJsonFromFiles())("File data matches native stringify when minimized", (fileData:string) => {
         // Yeah, this is convoluted.  Read the JSON data from files, parse it into objects, then create a minified
