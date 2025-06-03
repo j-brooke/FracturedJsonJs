@@ -216,7 +216,7 @@ describe("Table formatting tests", () => {
         expect(outputLines.length).toBe(5);
         expect(outputLines[1]).toContain('"steady" ');
         expect(outputLines[2]).toContain('"pulse" ');
-        expect(outputLines[3]).toContain('"gradient" ');
+        expect(outputLines[3]).toContain('"gradient",');
 
         expect(outputLines[1]).toContain('-44 ');
         expect(outputLines[2]).toContain('22 ');
@@ -240,7 +240,7 @@ describe("Table formatting tests", () => {
         formatter.Options.MaxTotalLineLength = 120;
         formatter.Options.JsonEolStyle = EolStyle.Lf;
         formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
-        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
 
         let output = formatter.Reformat(input, 0);
         let outputLines = output.trimEnd().split('\n');

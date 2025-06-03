@@ -9,6 +9,7 @@ import {TableTemplate} from "./TableTemplate";
 import {FracturedJsonError} from "./FracturedJsonError";
 import {Parser} from "./Parser";
 import {ConvertDataToDom} from "./ConvertDataToDom";
+import {TableCommaPlacement} from "./TableCommaPlacement";
 
 /**
  * Class that writes JSON data in a human-friendly format.  Comments are optionally supported.  While many options
@@ -548,47 +549,63 @@ export class Formatter {
                 this._pads.Spaces(template.MiddleCommentLength - item.MiddleCommentLength),
                 this._pads.Comment);
 
+        // Where to place the comma (if any) relative to the postfix comment (if any) and various padding.
+        const commaBeforePad = this.Options.TableCommaPlacement == TableCommaPlacement.BeforePadding
+            || this.Options.TableCommaPlacement == TableCommaPlacement.BeforePaddingExceptNumbers
+            && !template.IsNumberList;
+        let commaPos: CommaPosition;
+        if (template.PostfixCommentLength > 0 && !template.IsAnyPostCommentLineStyle) {
+            if (item.PostfixCommentLength > 0)
+                commaPos = (commaBeforePad) ? CommaPosition.BeforeCommentPadding : CommaPosition.AfterCommentPadding;
+            else
+                commaPos = (commaBeforePad) ? CommaPosition.BeforeValuePadding : CommaPosition.AfterCommentPadding;
+        }
+        else {
+            commaPos = (commaBeforePad) ? CommaPosition.BeforeValuePadding : CommaPosition.AfterValuePadding;
+        }
+
+        // If we're asked to include a comma, do it.  For internal segments, if we don't supply a comma, the padding
+        // will work out elsewhere.  But if this segment is the whole row of a table, we need to supply a dummy
+        // comma due to possible end-of-line comment complications.
+        const commaType = (includeTrailingComma)
+            ? this._pads.Comma
+            : (isWholeRow)
+                ? this._pads.DummyComma
+                : "";
+
         if (template.Children.length > 0 && item.Type !== JsonItemType.Null) {
             if (template.Type === JsonItemType.Array)
                 this.InlineTableRawArray(template, item);
             else
                 this.InlineTableRawObject(template, item);
+            if (commaPos == CommaPosition.BeforeValuePadding)
+                this._buffer.Add(commaType);
         }
         else if (template.IsNumberList) {
-            template.FormatNumber(this._buffer, item);
+            const numberCommaType = (commaPos == CommaPosition.BeforeValuePadding)? commaType : "";
+            template.FormatNumber(this._buffer, item, numberCommaType);
         }
         else {
             this.InlineElementRaw(item);
+            if (commaPos == CommaPosition.BeforeValuePadding)
+                this._buffer.Add(commaType);
             this._buffer.Add(this._pads.Spaces(template.CompositeValueLength - item.ValueLength));
         }
 
-        // If there's a postfix line comment, the comma needs to happen first.  For block comments,
-        // it would be better to put the comma after the comment.
-        const commaGoesBeforeComment = item.IsPostCommentLineStyle || item.PostfixCommentLength === 0;
-        if (commaGoesBeforeComment) {
-            // For internal row segments, there won't be trailing comments for any of the rows.  But
-            // if this is a whole row, then there will be commas after all but the last one.  So,
-            // if this is a whole row and it doesn't need a comma, then it needs padding to match
-            // the ones above.
-            if (includeTrailingComma)
-                this._buffer.Add(this._pads.Comma);
-            else if (isWholeRow)
-                this._buffer.Add(this._pads.DummyComma);
-        }
+        if (commaPos == CommaPosition.AfterValuePadding)
+            this._buffer.Add(commaType);
 
         if (template.PostfixCommentLength > 0)
-            this._buffer.Add(this._pads.Comment,
-                item.PostfixComment,
-                this._pads.Spaces(template.PostfixCommentLength - item.PostfixCommentLength));
+            this._buffer.Add(this._pads.Comment, item.PostfixComment);
 
-        if (!commaGoesBeforeComment) {
-            if (includeTrailingComma)
-                this._buffer.Add(this._pads.Comma);
-            else if (isWholeRow)
-                this._buffer.Add(this._pads.DummyComma);
-        }
+        if (commaPos == CommaPosition.BeforeCommentPadding)
+            this._buffer.Add(commaType);
+
+        this._buffer.Add(this._pads.Spaces((template.PostfixCommentLength - item.PostfixCommentLength)));
+
+        if (commaPos == CommaPosition.AfterCommentPadding)
+            this._buffer.Add(commaType);
     }
-
 
     /**
      * Adds just this ARRAY's value inlined, not worrying about comments and prop names and stuff.
@@ -791,4 +808,12 @@ export class Formatter {
     private static IsCommentOrBlankLine(type: JsonItemType): boolean {
         return type === JsonItemType.BlankLine || type === JsonItemType.BlockComment || type === JsonItemType.LineComment;
     }
+}
+
+enum CommaPosition
+{
+    BeforeValuePadding,
+    AfterValuePadding,
+    BeforeCommentPadding,
+    AfterCommentPadding,
 }
