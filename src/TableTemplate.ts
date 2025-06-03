@@ -39,6 +39,7 @@ export class TableTemplate {
     PrefixCommentLength: number = 0;
     MiddleCommentLength: number = 0;
     PostfixCommentLength: number = 0;
+    IsAnyPostCommentLineStyle: boolean = false;
     PadType: BracketPaddingType = BracketPaddingType.Simple;
 
     /**
@@ -109,7 +110,7 @@ export class TableTemplate {
      * Added the number, properly aligned and possibly reformatted, according to our measurements.
      * This assumes that the segment is a number list, and therefore that the item is a number or null.
      */
-    FormatNumber(buffer: IBuffer, item: JsonItem): void {
+    FormatNumber(buffer: IBuffer, item: JsonItem, commaBeforePadType: string): void {
         const formatType = (this._numberListAlignment===NumberListAlignment.Normalize && !this.AllowNumberNormalization)
             ? NumberListAlignment.Left
             : this._numberListAlignment;
@@ -117,15 +118,16 @@ export class TableTemplate {
         // The easy cases.  Use the value exactly as it was in the source doc.
         switch (formatType) {
             case NumberListAlignment.Left:
-                buffer.Add(item.Value, this._pads.Spaces(this.SimpleValueLength - item.ValueLength));
+                buffer.Add(item.Value, commaBeforePadType,
+                    this._pads.Spaces(this.SimpleValueLength - item.ValueLength));
                 return;
             case NumberListAlignment.Right:
-                buffer.Add(this._pads.Spaces(this.SimpleValueLength - item.ValueLength), item.Value);
+                buffer.Add(this._pads.Spaces(this.SimpleValueLength - item.ValueLength), item.Value,
+                    commaBeforePadType);
                 return;
         }
 
         let maxDigBefore: number;
-        let maxDigAfter: number;
         let valueStr: string;
         let valueLength: number;
 
@@ -133,20 +135,18 @@ export class TableTemplate {
             // Normalize case - rewrite the number with the appropriate precision.
             if (item.Type === JsonItemType.Null) {
                 buffer.Add(this._pads.Spaces(this._maxDigBeforeDecNorm - item.ValueLength), item.Value,
-                    this._pads.Spaces(this.CompositeValueLength - this._maxDigBeforeDecNorm));
+                    commaBeforePadType, this._pads.Spaces(this.CompositeValueLength - this._maxDigBeforeDecNorm));
                 return;
             }
 
             maxDigBefore = this._maxDigBeforeDecNorm;
-            maxDigAfter = this._maxDigAfterDecNorm;
             const numericVal = Number(item.Value);
-            valueStr = numericVal.toFixed(maxDigAfter);
+            valueStr = numericVal.toFixed(this._maxDigAfterDecNorm);
             valueLength = valueStr.length;
         }
         else {
             // Decimal case - line up the decimals (or E's) but leave the value exactly as it was in the source.
             maxDigBefore = this._maxDigBeforeDecRaw;
-            maxDigAfter = this._maxDigAfterDecRaw;
             valueStr = item.Value;
             valueLength = item.ValueLength;
         }
@@ -163,7 +163,7 @@ export class TableTemplate {
             rightPad = this.CompositeValueLength - maxDigBefore;
         }
 
-        buffer.Add(this._pads.Spaces(leftPad), valueStr, this._pads.Spaces(rightPad));
+        buffer.Add(this._pads.Spaces(leftPad), valueStr, commaBeforePadType, this._pads.Spaces(rightPad));
     }
 
     private static readonly _trulyZeroValString = new RegExp("^-?[0.]+([eE].*)?$");
@@ -217,6 +217,7 @@ export class TableTemplate {
         this.MiddleCommentLength = Math.max(this.MiddleCommentLength, rowSegment.MiddleCommentLength);
         this.PrefixCommentLength = Math.max(this.PrefixCommentLength, rowSegment.PrefixCommentLength);
         this.PostfixCommentLength = Math.max(this.PostfixCommentLength, rowSegment.PostfixCommentLength);
+        this.IsAnyPostCommentLineStyle ||= rowSegment.IsPostCommentLineStyle;
 
         if (rowSegment.Complexity >= 2)
             this.PadType = BracketPaddingType.Complex;
