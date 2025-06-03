@@ -3,6 +3,13 @@ import {CommentPolicy} from "./CommentPolicy";
 import {NumberListAlignment} from "./NumberListAlignment";
 import {TableCommaPlacement} from "./TableCommaPlacement";
 
+/**
+ * Settings controlling the output of FracturedJson-formatted JSON documents.
+ * Note that the constructor will give defaults that with stable behavior within all releases with the same major
+ * version number.  If new features are added in a minor version release, you can use the static factory method
+ * FracturedJsonOptions.Recommended() (instead of new) to get the most up-to-date preferred behavior.  This might not
+ * be backward compatible, though.
+ */
 export class FracturedJsonOptions
 {
     /**
@@ -137,4 +144,17 @@ export class FracturedJsonOptions
      * it's nice to have the option here.
      */
     AllowTrailingCommas: boolean = false;
+
+    /**
+     * Returns a new FracturedJsonOptions object with the recommended default settings without concern
+     * for backward compatibility.  The constructor's defaults should preserve the same behavior from one minor
+     * revision to the next even if new features are added.  The instance created by this method will be updated
+     * with new settings if they are more sensible for most cases.
+     */
+    static Recommended(): FracturedJsonOptions {
+        const newObj = new FracturedJsonOptions();
+        newObj.TableCommaPlacement = TableCommaPlacement.BeforePadding;
+        newObj.OmitTrailingWhitespace = true;
+        return newObj;
+    }
 }

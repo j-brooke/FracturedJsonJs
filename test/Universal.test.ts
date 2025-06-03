@@ -306,6 +306,8 @@ function GenerateOptions(): FracturedJsonOptions[] {
     opts.NumberListAlignment = NumberListAlignment.Normalize;
     optsList.push(opts);
 
+    optsList.push(FracturedJsonOptions.Recommended());
+
     return optsList;
 }
 
