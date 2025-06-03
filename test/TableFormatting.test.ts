@@ -1,9 +1,9 @@
 ﻿// Tests about formatting things in tables, so that corresponding properties and array positions are neatly
 // lined up, when possible.
-import {Formatter} from "../src";
+import {CommentPolicy, EolStyle, Formatter, NumberListAlignment} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
-import {CommentPolicy} from "../src";
+import {TableCommaPlacement} from "../src/TableCommaPlacement";
 
 describe("Table formatting tests", () => {
     test("Nested elements line up", () => {
@@ -162,5 +162,160 @@ describe("Table formatting tests", () => {
         // There should be 3 z's in the output, just like in the input.
         const zCount = output.match(/z/g)?.length ?? 0;
         expect(zCount).toBe(3);
+    });
+
+    test("Commas before padding works", () => {
+        const inputLines = [
+            "{",
+            "    'Rect' : { 'glow': 'steady', 'position': {'x': -44, 'y':  4}, 'color': [0, 255, 255] }, ",
+            "    'Point': { 'glow': 'pulse', 'position': {'y': 22, 'z': 3} }, ",
+            "    'Oval' : { 'glow': 'gradient', 'position': {'x': 140.33, 'y':  0.1}, 'color': '#7f3e96' }  ",
+            "}",
+        ];
+        const input = inputLines.join("\n").replace(/'/g, '"');
+
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 120;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.BeforePadding;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // In this case, the commas should be right next to values.
+        expect(outputLines.length).toBe(5);
+        expect(outputLines[1]).toContain('"steady",');
+        expect(outputLines[2]).toContain('"pulse",');
+        expect(outputLines[3]).toContain('"gradient",');
+
+        expect(outputLines[1]).toContain('-44,');
+        expect(outputLines[2]).toContain('22,');
+    });
+
+    test("Commas after padding works", () => {
+        const inputLines = [
+            "{",
+            "    'Rect' : { 'glow': 'steady', 'position': {'x': -44, 'y':  4}, 'color': [0, 255, 255] }, ",
+            "    'Point': { 'glow': 'pulse', 'position': {'y': 22, 'z': 3} }, ",
+            "    'Oval' : { 'glow': 'gradient', 'position': {'x': 140.33, 'y':  0.1}, 'color': '#7f3e96' }  ",
+            "}",
+        ];
+        const input = inputLines.join("\n").replace(/'/g, '"');
+
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 120;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // In this case, many values will have spaces after them.
+        expect(outputLines.length).toBe(5);
+        expect(outputLines[1]).toContain('"steady" ');
+        expect(outputLines[2]).toContain('"pulse" ');
+        expect(outputLines[3]).toContain('"gradient" ');
+
+        expect(outputLines[1]).toContain('-44 ');
+        expect(outputLines[2]).toContain('22 ');
+        expect(outputLines[3]).toContain('140.33,');
+
+        // And the first set of commas should line up.
+        expect(DoInstancesLineUp(outputLines, ",")).toBeTruthy();
+    });
+
+    test("Commas before padding except numbers works", () => {
+        const inputLines = [
+            "{",
+            "    'Rect' : { 'glow': 'steady', 'position': {'x': -44, 'y':  4}, 'color': [0, 255, 255] }, ",
+            "    'Point': { 'glow': 'pulse', 'position': {'y': 22, 'z': 3} }, ",
+            "    'Oval' : { 'glow': 'gradient', 'position': {'x': 140.33, 'y':  0.1}, 'color': '#7f3e96' }  ",
+            "}",
+        ];
+        const input = inputLines.join("\n").replace(/'/g, '"');
+
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 120;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // For strings, the commas should be right next to values.
+        expect(outputLines.length).toBe(5);
+        expect(outputLines[1]).toContain('"steady",');
+        expect(outputLines[2]).toContain('"pulse",');
+        expect(outputLines[3]).toContain('"gradient",');
+
+        // For numbers, many will have space after.
+        expect(outputLines[1]).toContain('-44 ');
+        expect(outputLines[2]).toContain('22 ');
+        expect(outputLines[3]).toContain('140.33,');
+
+        // And the commas should line up before the "y" column.
+        expect(DoInstancesLineUp(outputLines, ', "y":')).toBeTruthy();
+    });
+
+    test("Commas before padding works with comments", () => {
+        const input = `
+            [
+                [ 1 /* q */, "a" ], /* w */
+                [ 22, "bbb" ], // x
+                [ 3.33 /* sss */, "cc" ] /* y */
+            ]
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.MaxTotalLineLength = 40;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.BeforePadding;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // The commas should come immediately after the 22, and after the first comments on the other lines.
+        expect(outputLines.length).toBe(5);
+        expect(outputLines[1]).toContain('*/,');
+        expect(outputLines[2]).toContain('22,');
+        expect(outputLines[3]).toContain('*/,');
+
+        // The outer commas and comments should line up.
+        expect(outputLines[1].indexOf("],")).toBe(outputLines[2].indexOf("],"));
+        expect(outputLines[1].indexOf("/* w")).toBe(outputLines[2].indexOf("// x"));
+        expect(outputLines[2].indexOf("// x")).toBe(outputLines[3].indexOf("/* y"));
+    });
+
+    test("Commas after padding works with comments", () => {
+        const input = `
+            [
+                [ 1 /* q */, "a" ], /* w */
+                [ 22, "bbb" ], // x
+                [ 3.33 /* sss */, "cc" ] /* y */
+            ]
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.MaxTotalLineLength = 40;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // The first row of commas should be in a line after room for all comments.
+        expect(DoInstancesLineUp(outputLines, ',')).toBeTruthy();
+
+        // The outer commas and comments should line up.
+        expect(outputLines[1].indexOf("],")).toBe(outputLines[2].indexOf("],"));
+        expect(outputLines[1].indexOf("/* w")).toBe(outputLines[2].indexOf("// x"));
+        expect(outputLines[2].indexOf("// x")).toBe(outputLines[3].indexOf("/* y"));
     });
 });

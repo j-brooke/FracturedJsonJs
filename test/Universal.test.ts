@@ -1,5 +1,6 @@
 ﻿import {readdirSync, readFileSync} from "fs";
 import {CommentPolicy, EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment} from "../src";
+import {TableCommaPlacement} from "../src/TableCommaPlacement";
 
 /**
  * Tests that should pass with ANY input and ANY settings, within a few constraints.  These aren't particularly
@@ -288,6 +289,21 @@ function GenerateOptions(): FracturedJsonOptions[] {
     opts.CommentPadding = false;
     opts.IndentSpaces = 3;
     opts.PrefixString = "\t\t";
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.TableCommaPlacement = TableCommaPlacement.BeforePadding;
+    opts.NumberListAlignment = NumberListAlignment.Left;
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
+    opts.NumberListAlignment = NumberListAlignment.Decimal;
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
+    opts.NumberListAlignment = NumberListAlignment.Normalize;
     optsList.push(opts);
 
     return optsList;

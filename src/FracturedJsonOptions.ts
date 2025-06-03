@@ -1,6 +1,7 @@
 ﻿import {EolStyle} from "./EolStyle";
 import {CommentPolicy} from "./CommentPolicy";
 import {NumberListAlignment} from "./NumberListAlignment";
+import {TableCommaPlacement} from "./TableCommaPlacement";
 
 export class FracturedJsonOptions
 {
@@ -40,6 +41,12 @@ export class FracturedJsonOptions
      * Maximum degree of nesting of arrays/objects formatted as table rows.
      */
     MaxTableRowComplexity:number = 2;
+
+    /**
+     * Determines whether commas in table-formatted elements are lined up in their own column or right next to the
+     * element that precedes them.
+     */
+    TableCommaPlacement: TableCommaPlacement = TableCommaPlacement.AfterPadding;
 
     /**
      * Minimum number of items allowed per row to format an array as with multiple items per line across multiple
