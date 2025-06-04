@@ -92,20 +92,43 @@ npm i fracturedjsonjs
 ## Usage
 
 ```js
-const { Formatter, CommentPolicy, FracturedJsonOptions, EolStyle } = require('fracturedjsonjs');
+import {
+    Formatter,
+    FracturedJsonOptions,
+    CommentPolicy,
+    EolStyle,
+    NumberListAlignment,
+    TableCommaPlacement,
+} from 'fracturedjsonjs';
 
-// For examples of the options, see
-// https://github.com/j-brooke/FracturedJson/wiki/Options
+// The constructor below will give default behavior that is consistent across minor version
+// changes.  But if you don't care about backward compatibility and just want the newest best
+// settings whatever they are, use this instead:
+//   const options = FracturedJsonOptions.Recommended();
 const options = new FracturedJsonOptions();
+
+// For examples of the options, see:
+//   https://github.com/j-brooke/FracturedJson/wiki/Options
+// Or experiment interactively with the web formatter:
+//   https://j-brooke.github.io/FracturedJson/
 options.MaxTotalLineLength = 80;
 options.MaxInlineComplexity = 1;
 options.JsonEolStyle = EolStyle.Crlf;
+options.NumberListAlignment = NumberListAlignment.Decimal;
+options.TableCommaPlacement = TableCommaPlacement.BeforePadding;
 
 const formatter = new Formatter();
 formatter.Options = options;
 
 // Use Serialize to go from JavaScript data to JSON text.
-const inputObj = [[1, 2, 3], [4, 16, 64]];
+const inputObj = [
+    { val: 123.456 },
+    { val: 234567.8 },
+    { val: 3 },
+    { val: null },
+    { val: 5.67890123 }
+];
+
 const textFromObj = formatter.Serialize(inputObj);
 
 console.log("From inputObj:");
@@ -116,7 +139,8 @@ formatter.Options.CommentPolicy = CommentPolicy.Preserve;
 formatter.Options.IndentSpaces = 2;
 
 // Use Reformat to go from JSON text to JSON text.
-const inputText = '{ "a": [1, 2, 3] /* <a */, "b": [null, 5] /* <b */ }';
+const inputText = '[{"a":123.456,"b":0,"c":0},{"a":234567.8,"b":0,"c":0},'
+    + '{"a":3,"b":0.00000,"c":7e2},{"a":null,"b":2e-1,"c":80e1},{"a":5.6789,"b":3.5e-1,"c":0}]';
 const textFromText = formatter.Reformat(inputText);
 
 console.log("From inputText:");
