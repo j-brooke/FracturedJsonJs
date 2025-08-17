@@ -1,5 +1,11 @@
 # FracturedJsonJs Change Log
 
+## 4.1.1
+
+### Bug Fix
+
+* Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/44) causing misaligned tables when a table column contains both nulls and very short non-empty arrays.
+
 ## 4.1.0
 
 ### Features
