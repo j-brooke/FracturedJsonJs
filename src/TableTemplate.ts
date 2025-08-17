@@ -62,6 +62,17 @@ export class TableTemplate {
     CompositeValueLength: number = 0;
 
     /**
+     * If the row contains non-empty array or objects whose value is shorter than the literal null, an extra adjustment
+     * is needed.
+     */
+    ShorterThanNullAdjustment: number = 0;
+
+    /**
+     * True if at least one row in the column this represents has a null value.
+     */
+    ContainsNull: boolean = false;
+
+    /**
      * Length of the entire template, including space for the value, property name, and all comments.
      */
     TotalLength: number = 0;
@@ -199,6 +210,7 @@ export class TableTemplate {
         else if (rowSegment.Type === JsonItemType.Null) {
             this._maxDigBeforeDecNorm = Math.max(this._maxDigBeforeDecNorm, this._pads.LiteralNullLen);
             this._maxDigBeforeDecRaw = Math.max(this._maxDigBeforeDecRaw, this._pads.LiteralNullLen);
+            this.ContainsNull = true;
         }
         else {
             this.IsRowDataCompatible &&= (this.Type === rowSegment.Type || this.Type === JsonItemType.Null);
@@ -305,6 +317,10 @@ export class TableTemplate {
                 + Math.max(0, this._pads.CommaLen * (this.Children.length-1))
                 + this._pads.ArrStartLen(this.PadType)
                 + this._pads.ArrEndLen(this.PadType);
+            if (this.ContainsNull && this.CompositeValueLength < this._pads.LiteralNullLen) {
+                this.ShorterThanNullAdjustment = this._pads.LiteralNullLen - this.CompositeValueLength;
+                this.CompositeValueLength = this._pads.LiteralNullLen;
+            }
         }
         else  {
             this.CompositeValueLength = this.SimpleValueLength;

@@ -3,7 +3,7 @@
 import {CommentPolicy, EolStyle, Formatter, NumberListAlignment} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
-import {TableCommaPlacement} from "../src/TableCommaPlacement";
+import {TableCommaPlacement} from "../src";
 
 describe("Table formatting tests", () => {
     test("Nested elements line up", () => {
@@ -317,5 +317,24 @@ describe("Table formatting tests", () => {
         expect(outputLines[1].indexOf("],")).toBe(outputLines[2].indexOf("],"));
         expect(outputLines[1].indexOf("/* w")).toBe(outputLines[2].indexOf("// x"));
         expect(outputLines[2].indexOf("// x")).toBe(outputLines[3].indexOf("/* y"));
+    });
+
+    test("Handles nulls with array table columns", () => {
+        // Special case issue.  If a non-empty array has a shorter length than the literal "null", and the column
+        // also contains a null, the array needs to be padded out to the size of null.
+        const input = `
+            [
+                {"Thing": null /* q */}, 
+                {"Thing": [5] /* r */} 
+            ]
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        expect(DoInstancesLineUp(outputLines, '}')).toBeTruthy();
+        expect(DoInstancesLineUp(outputLines, '*/')).toBeTruthy();
     });
 });

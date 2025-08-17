@@ -580,6 +580,11 @@ export class Formatter {
                 this.InlineTableRawObject(template, item);
             if (commaPos == CommaPosition.BeforeValuePadding)
                 this._buffer.Add(commaType);
+
+            // Special adjustment if the object/array is shorter than the literal "null".
+            if (template.ShorterThanNullAdjustment > 0) {
+                this._buffer.Add(this._pads.Spaces(template.ShorterThanNullAdjustment));
+            }
         }
         else if (template.IsNumberList) {
             const numberCommaType = (commaPos == CommaPosition.BeforeValuePadding)? commaType : "";
