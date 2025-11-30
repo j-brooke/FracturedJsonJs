@@ -13,7 +13,8 @@ import {TableCommaPlacement} from "./TableCommaPlacement";
 export class FracturedJsonOptions
 {
     /**
-     * Dictates which characters to use for line breaks.
+     * Specifies the line break style (e.g., LF or CRLF) for the formatted JSON output. EolStyle
+     * for options.
      */
     JsonEolStyle: EolStyle = EolStyle.Lf;
 
@@ -26,39 +27,55 @@ export class FracturedJsonOptions
     MaxInlineLength: number = 2000000000;
 
     /**
-     * Maximum length that the formatter can use when combining complex elements into a single line, from the start
-     * of the line.  This is identical to MaxInlineLength except that this one DOES count indentation
-     * and any PrefixString.
+     * Maximum length (in characters, including indentation) when more than one simple value is put on a line.
+     * individual values (e.g., long strings) may exceed this limit.
      */
     MaxTotalLineLength: number = 120;
 
     /**
-     * Maximum degree of nesting of arrays/objects that may be written on a single line.  0 disables inlining (but see
+     * Maximum nesting level of arrays/objects that may be written on a single line.  0 disables inlining (but see
      * related settings).  1 allows inlining of arrays/objects that contain only simple items.  2 allows inlining of
-     * arrays/objects that contain other arrays/objects as long as the child containers only contain simple items.  Etc.
+     * arrays/objects that contain other arrays/objects as long as the child containers only contain simple items.
+     * Higher values allow deeper nesting.
      */
     MaxInlineComplexity: number = 2;
 
     /**
-     * Maximum degree of nesting of arrays formatted as with multiple items per row across multiple rows.
+     *  Maximum nesting level for arrays formatted with multiple items per row across multiple lines. Set to 0 to
+     *  disable this format.  1 allows arrays containing only simple values to be formatted this way.  2 allows arrays
+     *  containing arrays or elements that contain only simple values.  Higher values allow deeper nesting.
      */
-    MaxCompactArrayComplexity: number = 1;
+    MaxCompactArrayComplexity: number = 2;
 
     /**
-     * Maximum degree of nesting of arrays/objects formatted as table rows.
+     * Maximum nesting level of the rows of an array or object formatted as a table with aligned columns.  When set
+     * to 0, the rows may only be simple values and there will only be one column.  When set to 1, each row can be
+     * an array or object containing only simple values.  Higher values allow deeper nesting.
      */
     MaxTableRowComplexity:number = 2;
 
     /**
-     * Determines whether commas in table-formatted elements are lined up in their own column or right next to the
-     * element that precedes them.
+     * Maximum length difference between property names in an object to align them vertically in expanded (non-table)
+     * formatting.
+     */
+    MaxPropNamePadding:number = 16;
+
+    /**
+     * If true, colons in aligned object properties are placed right after the property name (e.g., 'name:    value');
+     * if false, colons align vertically after padding (e.g., 'name   : value'). Applies to table and expanded
+     * formatting.
+     */
+    ColonBeforePropNamePadding:boolean = false;
+
+    /**
+     * Determines whether commas in table-formatted rows are lined up in their own column after padding or placed
+     * directly after each element, before padding spaces.
      */
     TableCommaPlacement: TableCommaPlacement = TableCommaPlacement.AfterPadding;
 
     /**
-     * Minimum number of items allowed per row to format an array as with multiple items per line across multiple
-     * lines.  This is an approximation, not a hard rule.  The idea is that if there will be too few items per row,
-     * you'd probably rather see it as a table.
+     * Minimum items per row to format an array with multiple items per line across multiple lines.  This is a
+     * guideline, not a strict rule.
      */
     MinCompactArrayRowItems: number = 3;
 
@@ -77,6 +94,10 @@ export class FracturedJsonOptions
     /**
      * If an inlined array or object does NOT contain other arrays/objects, setting SimpleBracketPadding to true
      * will include spaces inside the brackets.
+     *
+     * Example: <br/>
+     * true: [ [ 1, 2, 3 ], [ 4 ] ] <br/>
+     * false: [ [1, 2, 3], [4] ] <br/>
      */
     SimpleBracketPadding: boolean = false;
 
@@ -91,7 +112,7 @@ export class FracturedJsonOptions
     CommaPadding: boolean = true;
 
     /**
-     * If true, spaces are included between prefix and postfix comments and their content.
+     * If true, spaces are included between JSON data and comments that precede or follow them on the same line.
      */
     CommentPadding: boolean = true;
 
@@ -104,10 +125,11 @@ export class FracturedJsonOptions
     OmitTrailingWhitespace: boolean = false;
 
     /**
-     * Controls how lists or columns of numbers (possibly with nulls) are aligned, and whether their precision
-     * may be normalized.
+     * Controls alignment of numbers in table columns or compact multiline arrays.  When set to
+     * NumberListAlignment.Normalize, numbers are rewritten to have the same decimal precision as others
+     * in the same column.  Other settings preserve input numbers exactly.
      */
-    NumberListAlignment: NumberListAlignment = NumberListAlignment.Normalize;
+    NumberListAlignment: NumberListAlignment = NumberListAlignment.Decimal;
 
     /**
      * Number of spaces to use per indent level.  If UseTabToIndent is true, spaces won't be used but
@@ -139,22 +161,19 @@ export class FracturedJsonOptions
     PreserveBlankLines: boolean = false;
 
     /**
-     * If true, arrays and objects that contain a comma after their last element are permitting.  The JSON standard
-     * does not allow commas after the final element of an array or object, but some systems permit it, so
-     * it's nice to have the option here.
+     * If true, allows a comma after the last element in arrays or objects, which is non-standard JSON but supported
+     * by some systems.
      */
     AllowTrailingCommas: boolean = false;
 
     /**
-     * Returns a new FracturedJsonOptions object with the recommended default settings without concern
-     * for backward compatibility.  The constructor's defaults should preserve the same behavior from one minor
-     * revision to the next even if new features are added.  The instance created by this method will be updated
-     * with new settings if they are more sensible for most cases.
+     * Creates a new FracturedJsonOptions with recommended settings, prioritizing sensible defaults
+     * over backward compatibility. Constructor defaults maintain consistent behavior across minor versions, while
+     * this method may adopt newer, preferred settings.
      */
     static Recommended(): FracturedJsonOptions {
-        const newObj = new FracturedJsonOptions();
-        newObj.TableCommaPlacement = TableCommaPlacement.BeforePadding;
-        newObj.OmitTrailingWhitespace = true;
-        return newObj;
+        // At the beginning of version 5, the defaults are the recommended settings.  This may change in future
+        // minor versions.
+        return new FracturedJsonOptions();
     }
 }

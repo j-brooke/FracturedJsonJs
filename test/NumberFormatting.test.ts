@@ -1,4 +1,4 @@
-﻿import {EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment} from "../src";
+﻿import {EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment, TableCommaPlacement} from "../src";
 
 describe('Number formatting tests', function () {
     test("Inline array doesn't justify numbers", () => {
@@ -20,6 +20,8 @@ describe('Number formatting tests', function () {
         // alike, which means padding spaces on the left and zeros on the right.
         const formatter = new Formatter();
         formatter.Options.MaxInlineComplexity = -1;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Normalize;
 
         let output = formatter.Reformat(input, 0);
 
@@ -30,13 +32,16 @@ describe('Number formatting tests', function () {
         const input = "[[1, 2.1, 3, -99],[5, 6, 7, 8]]";
         const expectedOutput =
             "[\n" +
-            "    [1, 2.1, 3, -99], \n" +
-            "    [5, 6.0, 7,   8]  \n" +
+            "    [1, 2.1, 3, -99],\n" +
+            "    [5, 6.0, 7,   8]\n" +
             "]";
 
         // Since this is table formatting, each column is consistent, but not siblings in the same array.
         const formatter = new Formatter();
         formatter.Options.MaxInlineComplexity = -1;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Normalize;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding
 
         let output = formatter.Reformat(input, 0);
 
@@ -50,6 +55,9 @@ describe('Number formatting tests', function () {
         // If there's a number that requires an "E", don't try to justify the numbers.
         const formatter = new Formatter();
         formatter.Options.MaxInlineComplexity = -1;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Normalize;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
 
         let output = formatter.Reformat(input, 0);
 
@@ -57,12 +65,15 @@ describe('Number formatting tests', function () {
     });
 
     test("Big numbers invalidate alignment 2", () => {
-        const input = "[1, 2.1, 3, 1234567890123456]";
-        const expectedOutput = "[\n    1               , 2.1             , 3               , 1234567890123456\n]";
+        const input = "[1, 2.1, 3, 12345678901234567]";
+        const expectedOutput = "[\n    1                , 2.1              , 3                , 12345678901234567\n]";
 
         // If there's a number with too many significant digits, don't try to justify the numbers.
         const formatter = new Formatter();
         formatter.Options.MaxInlineComplexity = -1;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Normalize;
+        formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
 
         let output = formatter.Reformat(input, 0);
 
@@ -85,7 +96,7 @@ describe('Number formatting tests', function () {
 
     test("Overflow Double Invalidates Alignment", () => {
         const input = "[1e500, 4.0]";
-        const expectedOutput = "[\n    1e500, 4.0  \n]";
+        const expectedOutput = "[\n    1e500,\n    4.0\n]";
 
         // If a number is too big to fit in a 64-bit float, we shouldn't try to reformat its column/array.
         // If we did, it would turn into "Infinity", isn't a valid JSON token.
@@ -99,7 +110,7 @@ describe('Number formatting tests', function () {
 
     test("Underflow Double Invalidates Alignment", () => {
         const input = "[1e-500, 4.0]";
-        const expectedOutput = "[\n    1e-500, 4.0   \n]";
+        const expectedOutput = "[\n    1e-500,\n    4.0\n]";
 
         // If a number is too small to fit in a 64-bit float, we shouldn't try to reformat its column/array.
         // Doing so would change it to zero, which might be an unwelcome loss of precision.
@@ -112,7 +123,7 @@ describe('Number formatting tests', function () {
     });
 
     test("AccurateCompositeLengthForNormalized", () => {
-        // Make sure the the inner TableTemplate is accurately reporting the CompositeLength.  Otherwise,
+        // Make sure the inner TableTemplate is accurately reporting the CompositeLength.  Otherwise,
         // the null row won't have the right number of spaces.
         const inputRows = [
             "[",
@@ -127,7 +138,6 @@ describe('Number formatting tests', function () {
         const opts = new FracturedJsonOptions()
         opts.MaxTotalLineLength = 40;
         opts.JsonEolStyle = EolStyle.Lf;
-        opts.OmitTrailingWhitespace = true;
         opts.NumberListAlignment = NumberListAlignment.Normalize;
 
         const formatter = new Formatter();
@@ -211,8 +221,8 @@ function TestAlignment(align: NumberListAlignment, expectedRows: string[]): void
     const formatter = new Formatter();
     formatter.Options.MaxTotalLineLength = 60;
     formatter.Options.JsonEolStyle = EolStyle.Lf;
-    formatter.Options.OmitTrailingWhitespace = true;
     formatter.Options.NumberListAlignment = align;
+    formatter.Options.TableCommaPlacement = TableCommaPlacement.AfterPadding;
 
     const output = formatter.Reformat(input);
     const outputRows = output!.trimEnd().split('\n');

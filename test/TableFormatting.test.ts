@@ -1,9 +1,8 @@
 ﻿// Tests about formatting things in tables, so that corresponding properties and array positions are neatly
 // lined up, when possible.
-import {CommentPolicy, EolStyle, Formatter, NumberListAlignment} from "../src";
+import {CommentPolicy, EolStyle, Formatter, NumberListAlignment, TableCommaPlacement} from "../src";
 // @ts-ignore
 import {DoInstancesLineUp} from "./Helpers";
-import {TableCommaPlacement} from "../src";
 
 describe("Table formatting tests", () => {
     test("Nested elements line up", () => {
@@ -18,6 +17,8 @@ describe("Table formatting tests", () => {
 
         // With default options, this will be neatly formatted as a table.
         const formatter = new Formatter();
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Normalize;
 
         let output = formatter.Reformat(input, 0);
         let outputLines = output.trimEnd().split('\n');
@@ -71,6 +72,8 @@ describe("Table formatting tests", () => {
         // In this case, it's too small to do any table formatting.  But each row should still be inlined.
         const formatter = new Formatter();
         formatter.Options.MaxTotalLineLength = 74;
+        formatter.Options.JsonEolStyle = EolStyle.Lf;
+        formatter.Options.MaxPropNamePadding = 0;
 
         let output = formatter.Reformat(input, 0);
         let outputLines = output.trimEnd().split('\n');
@@ -336,5 +339,31 @@ describe("Table formatting tests", () => {
 
         expect(DoInstancesLineUp(outputLines, '}')).toBeTruthy();
         expect(DoInstancesLineUp(outputLines, '*/')).toBeTruthy();
+    });
+
+    test("Colons hug prop names", () => {
+        const input = `
+            {
+                "twos": [2, 4, 6, 8],
+                "threes": [3, 6, 9, 12],
+                "fours": [4, 8, 12, 16]
+            }
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 40;
+        formatter.Options.ColonBeforePropNamePadding = true;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        // This should be table-formatted (so the square brackets line up), but the colons should be right next
+        // to the property names, rather than lined up in front of the opening square brackets.
+        expect(outputLines.length).toBe(5);
+        expect(DoInstancesLineUp(outputLines, '[')).toBeTruthy();
+        expect(DoInstancesLineUp(outputLines, ']')).toBeTruthy();
+        expect(outputLines[1]).toContain('":');
+        expect(outputLines[2]).toContain('":');
+        expect(outputLines[3]).toContain('":');
     });
 });
