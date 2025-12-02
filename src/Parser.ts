@@ -442,6 +442,7 @@ export class Parser {
             }
 
             element.MiddleComment = combined;
+            element.MiddleCommentHasNewLine = (combined.indexOf('\n') >= 0);
         }
 
         // Figure out if the last of the comments before the prop name should be attached to this element.

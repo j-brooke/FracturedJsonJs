@@ -4,9 +4,6 @@
  * A place where strings are piled up sequentially to eventually make one big string.
  */
 export class StringJoinBuffer implements IBuffer {
-    constructor(trimTrailingWhitespace: boolean) {
-        this._trimTrailingWhitespace = trimTrailingWhitespace;
-    }
     Add(...values: string[]): IBuffer {
         this._lineBuff.push(...values);
         return this;
@@ -30,7 +27,6 @@ export class StringJoinBuffer implements IBuffer {
 
     private _lineBuff: string[] = [];
     private readonly _docBuff: string[] = [];
-    private readonly _trimTrailingWhitespace: boolean;
 
     /**
      * Takes the contents of _lineBuff and merges them into a string and adds it to _docBuff.  If desired,
@@ -40,9 +36,7 @@ export class StringJoinBuffer implements IBuffer {
         if (this._lineBuff.length===0 && eolString.length===0)
             return;
 
-        let line = this._lineBuff.join("");
-        if (this._trimTrailingWhitespace)
-            line = line.trimEnd();
+        let line = this._lineBuff.join("").trimEnd();
 
         this._docBuff.push(line + eolString);
         this._lineBuff = [];

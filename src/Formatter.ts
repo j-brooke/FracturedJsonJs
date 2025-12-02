@@ -42,7 +42,7 @@ export class Formatter {
      * @param startingDepth starting indentation level for output
      */
     Reformat(jsonText: string, startingDepth: number = 0): string {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
@@ -59,7 +59,7 @@ export class Formatter {
      * @param recursionLimit nesting level at which we give up and assume we were given a circular reference
      */
     Serialize(element: any, startingDepth: number = 0, recursionLimit:number = 100): string | undefined {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
 
         const docModel = ConvertDataToDom(element, undefined, recursionLimit);
         if (!docModel)
@@ -78,7 +78,7 @@ export class Formatter {
      * @constructor
      */
     Minify(jsonText:string): string {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
@@ -88,7 +88,7 @@ export class Formatter {
         return buffer.AsString();
     }
 
-    private _buffer:IBuffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+    private _buffer:IBuffer = new StringJoinBuffer();
     private _pads:PaddedFormattingTokens =
         new PaddedFormattingTokens(new FracturedJsonOptions(), Formatter.StringLengthByCharCount);
 
@@ -101,7 +101,7 @@ export class Formatter {
             this.FormatItem(item, startingDepth, false);
         }
 
-        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        this._buffer = new StringJoinBuffer();
     }
 
     private MinifyTopLevel(docModel: JsonItem[], buffer: IBuffer) {
@@ -112,7 +112,7 @@ export class Formatter {
         for (const item of docModel)
             atStartOfNewLine = this.MinifyItem(item, atStartOfNewLine);
 
-        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        this._buffer = new StringJoinBuffer();
     }
 
     /**

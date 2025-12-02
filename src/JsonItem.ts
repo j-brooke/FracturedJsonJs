@@ -4,10 +4,10 @@ import {InputPosition} from "./InputPosition";
 /**
  * A distinct thing that can be where ever JSON values are expected in a JSON-with-comments doc.  This could be an
  * actual data value, such as a string, number, array, etc. (generally referred to here as "elements"), or it could be
- * a blank line or standalone comment.  In some cases, comments won't be stand-alone JsonItems, but will instead
+ * a blank line or standalone comment.  In some cases, comments won't be standalone JsonItems, but will instead
  * be attached to elements to which they seem to belong.
  *
- * Much of this data is produced by the Parser, but some of the properties - like all of the
+ * Much of this data is produced by the Parser, but some of the properties - like all the
  * length ones - are not set by Parser, but rather, provided for use by Formatter.
  */
 export class JsonItem {
@@ -46,6 +46,11 @@ export class JsonItem {
     MiddleComment:string = "";
 
     /**
+     * True if there's a line-style middle comment or a block style one with a newline in it.
+     */
+    MiddleCommentHasNewLine:boolean = false;
+
+    /**
      * Comment that belongs in front of this element on the same line, if any.
      */
     PostfixComment:string = "";
@@ -56,6 +61,10 @@ export class JsonItem {
     IsPostCommentLineStyle: boolean = false;
 
     NameLength:number = 0;
+
+    /**
+     * String length of the value part.  If it's an array or object, it's the sum of the children, with padding
+     */
     ValueLength:number = 0;
     PrefixCommentLength:number = 0;
     MiddleCommentLength:number = 0;
