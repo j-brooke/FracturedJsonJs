@@ -107,7 +107,7 @@ describe("Property Alignment Tests", () => {
     test("Align prop vals when simple comment", () => {
         const input = `
             {
-                "foo": // this is foo
+                "foo": /* this is foo */
                     [1, 2, 4],
                 "bar": null,
                 "bazzzz": /* this is baz */ [0]
