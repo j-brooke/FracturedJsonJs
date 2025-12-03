@@ -494,26 +494,14 @@ export class Formatter {
     private StandardFormatStart(item: JsonItem, depth: number, parentTemplate: TableTemplate | null): number {
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
 
-        let prefixPad = 0;
-        let namePad = 0;
-        let middlePad = 0;
-
-        // parentTemplate will exist if we're supposed to line up some of this element with its siblings.
         if (parentTemplate) {
-            prefixPad = parentTemplate.PrefixCommentLength - item.PrefixCommentLength;
-            namePad = parentTemplate.NameLength - item.NameLength;
-            middlePad = parentTemplate.MiddleCommentLength - item.MiddleCommentLength;
-        }
-
-        if (item.PrefixCommentLength > 0)
-            this._buffer.Add(item.PrefixComment, this._pads.Spaces(prefixPad), this._pads.Comment);
-
-        if (item.NameLength > 0) {
-            this._buffer.Add(item.Name);
-            if (this.Options.ColonBeforePropNamePadding)
-                this._buffer.Add(this._pads.Colon, this._pads.Spaces(namePad));
-            else
-                this._buffer.Add(this._pads.Spaces(namePad), this._pads.Colon);
+            this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, parentTemplate.PrefixCommentLength,
+                this._pads.Comment, false);
+            this.AddToBufferFixed(item.Name, item.NameLength, parentTemplate.NameLength, this._pads.Colon,
+                this.Options.ColonBeforePropNamePadding);
+        } else {
+            this.AddToBuffer(item.PrefixComment, item.PrefixCommentLength, this._pads.Comment);
+            this.AddToBuffer(item.Name, item.NameLength, this._pads.Colon);
         }
 
         if (item.MiddleCommentLength === 0)
@@ -521,7 +509,10 @@ export class Formatter {
 
         // If there's an inlineable middle comment, we write it on the same line and move along.  Easy.
         if (!item.MiddleCommentHasNewLine) {
-            this._buffer.Add(item.MiddleComment, this._pads.Spaces(middlePad), this._pads.Comment);
+            const middlePad = (parentTemplate)
+                ? parentTemplate.MiddleCommentLength - item.MiddleCommentLength
+                : 0;
+            this._buffer.Add(item.MiddleComment).Spaces(middlePad).Add(this._pads.Comment);
             return depth;
         }
 
@@ -538,7 +529,7 @@ export class Formatter {
 
     /**
      * Do the stuff that's usually the same for the end of all formatted items, like trailing commas and postfix
-     * comments.
+     * comments.  This is only called when it's the last thing on the line.
      */
     private StandardFormatEnd(item: JsonItem, includeTrailingComma: boolean): void {
         if (includeTrailingComma && item.IsPostCommentLineStyle)
@@ -559,35 +550,19 @@ export class Formatter {
         if (item.RequiresMultipleLines)
             throw new FracturedJsonError("Logic error - trying to inline invalid element");
 
-        // If parentTemplate is provided, we need to align this item's value with its siblings on other rows.
+        // If parentTemplate is provided, we need to align this item's value with its siblings on other rows.  (This
+        // typically means that the parent container can't be table formatted, but we are aligning property values.)
         if (parentTemplate) {
-            if (parentTemplate.PrefixCommentLength > 0) {
-                this._buffer.Add(item.PrefixComment,
-                    this._pads.Spaces(parentTemplate.PrefixCommentLength - item.PrefixCommentLength),
-                    this._pads.Comment);
-            }
-
-            if (parentTemplate.NameLength > 0) {
-                this._buffer.Add(item.Name);
-
-                if (this.Options.ColonBeforePropNamePadding)
-                    this._buffer.Add(this._pads.Colon, this._pads.Spaces(parentTemplate.NameLength - item.NameLength));
-                else
-                    this._buffer.Add(this._pads.Spaces(parentTemplate.NameLength - item.NameLength), this._pads.Colon);
-            }
-
-            if (parentTemplate.MiddleCommentLength > 0) {
-                this._buffer.Add(item.MiddleComment,
-                    this._pads.Spaces(parentTemplate.MiddleCommentLength - item.MiddleCommentLength),
-                    this._pads.Comment);
-            }
+            this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, parentTemplate.PrefixCommentLength,
+                this._pads.Comment, false);
+            this.AddToBufferFixed(item.Name, item.NameLength, parentTemplate.NameLength, this._pads.Colon,
+                this.Options.ColonBeforePropNamePadding);
+            this.AddToBufferFixed(item.MiddleComment, item.MiddleCommentLength, parentTemplate.MiddleCommentLength,
+                this._pads.Comment, false);
         } else {
-            if (item.PrefixCommentLength > 0)
-                this._buffer.Add(item.PrefixComment, this._pads.Comment);
-            if (item.NameLength > 0)
-                this._buffer.Add(item.Name, this._pads.Colon);
-            if (item.MiddleCommentLength > 0)
-                this._buffer.Add(item.MiddleComment, this._pads.Comment);
+            this.AddToBuffer(item.PrefixComment, item.PrefixCommentLength, this._pads.Comment);
+            this.AddToBuffer(item.Name, item.NameLength, this._pads.Colon);
+            this.AddToBuffer(item.MiddleComment, item.MiddleCommentLength, this._pads.Comment);
         }
 
         this.InlineElementRaw(item);
@@ -633,23 +608,12 @@ export class Formatter {
      */
     private InlineTableRowSegment(template: TableTemplate, item: JsonItem, includeTrailingComma: boolean,
                                   isWholeRow: boolean) {
-        if (template.PrefixCommentLength > 0)
-            this._buffer.Add(item.PrefixComment,
-                this._pads.Spaces(template.PrefixCommentLength - item.PrefixCommentLength),
-                this._pads.Comment);
-
-        if (template.NameLength > 0) {
-            this._buffer.Add(item.Name);
-            if (this.Options.ColonBeforePropNamePadding)
-                this._buffer.Add(this._pads.Colon, this._pads.Spaces(template.NameLength - item.NameLength))
-            else
-                this._buffer.Add(this._pads.Spaces(template.NameLength - item.NameLength), this._pads.Colon)
-        }
-
-        if (template.MiddleCommentLength > 0)
-            this._buffer.Add(item.MiddleComment,
-                this._pads.Spaces(template.MiddleCommentLength - item.MiddleCommentLength),
-                this._pads.Comment);
+        this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, template.PrefixCommentLength,
+            this._pads.Comment, false);
+        this.AddToBufferFixed(item.Name, item.NameLength, template.NameLength, this._pads.Colon,
+            this.Options.ColonBeforePropNamePadding);
+        this.AddToBufferFixed(item.MiddleComment, item.MiddleCommentLength, template.MiddleCommentLength,
+            this._pads.Comment, false);
 
         // Where to place the comma (if any) relative to the postfix comment (if any) and various padding.
         const commaBeforePad = this.Options.TableCommaPlacement == TableCommaPlacement.BeforePadding
@@ -685,7 +649,7 @@ export class Formatter {
 
             // Special adjustment if the object/array is shorter than the literal "null".
             if (template.ShorterThanNullAdjustment > 0) {
-                this._buffer.Add(this._pads.Spaces(template.ShorterThanNullAdjustment));
+                this._buffer.Spaces(template.ShorterThanNullAdjustment);
             }
         }
         else if (template.Type === TableColumnType.Number) {
@@ -696,7 +660,7 @@ export class Formatter {
             this.InlineElementRaw(item);
             if (commaPos == CommaPosition.BeforeValuePadding)
                 this._buffer.Add(commaType);
-            this._buffer.Add(this._pads.Spaces(template.CompositeValueLength - item.ValueLength));
+            this._buffer.Spaces(template.CompositeValueLength - item.ValueLength);
         }
 
         if (commaPos == CommaPosition.AfterValuePadding)
@@ -708,7 +672,7 @@ export class Formatter {
         if (commaPos == CommaPosition.BeforeCommentPadding)
             this._buffer.Add(commaType);
 
-        this._buffer.Add(this._pads.Spaces((template.PostfixCommentLength - item.PostfixCommentLength)));
+        this._buffer.Spaces((template.PostfixCommentLength - item.PostfixCommentLength));
 
         if (commaPos == CommaPosition.AfterCommentPadding)
             this._buffer.Add(commaType);
@@ -727,7 +691,7 @@ export class Formatter {
 
             if (isPastEndOfArray) {
                 // We're done writing this array's children out.  Now we just need to add space to line up with others.
-                this._buffer.Add(this._pads.Spaces(subTemplate.TotalLength));
+                this._buffer.Spaces(subTemplate.TotalLength);
                 if (!isLastInTemplate)
                     this._buffer.Add(this._pads.DummyComma);
             }
@@ -768,7 +732,7 @@ export class Formatter {
                     this._buffer.Add(this._pads.DummyComma);
             }
             else {
-                this._buffer.Add(this._pads.Spaces(subTemplate.TotalLength));
+                this._buffer.Spaces(subTemplate.TotalLength);
                 if (!isLastInTemplate)
                     this._buffer.Add(this._pads.DummyComma);
             }
@@ -867,6 +831,23 @@ export class Formatter {
         }
 
         return false;
+    }
+
+    private AddToBuffer(value:string, valueWidth:number, separator:string) {
+        if (valueWidth <= 0)
+            return;
+        this._buffer.Add(value, separator);
+    }
+
+    private AddToBufferFixed(value:string, valueWidth:number, fieldWidth:number, separator:string,
+                             separatorBeforePadding:boolean) {
+        if (fieldWidth <= 0)
+            return;
+        const padWidth = fieldWidth - valueWidth;
+        if (separatorBeforePadding)
+            this._buffer.Add(value, separator).Spaces(padWidth);
+        else
+            this._buffer.Add(value).Spaces(padWidth).Add(separator);
     }
 
     private static GetPaddingType(arrOrObj: JsonItem): BracketPaddingType {

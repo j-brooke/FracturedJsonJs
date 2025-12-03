@@ -149,18 +149,16 @@ export class TableTemplate {
         // The easy cases.  Use the value exactly as it was in the source doc.
         switch (this._numberListAlignment) {
             case NumberListAlignment.Left:
-                buffer.Add(item.Value, commaBeforePadType,
-                    this._pads.Spaces(this.MaxValueLength - item.ValueLength));
+                buffer.Add(item.Value, commaBeforePadType).Spaces(this.MaxValueLength - item.ValueLength);
                 return;
             case NumberListAlignment.Right:
-                buffer.Add(this._pads.Spaces(this.MaxValueLength - item.ValueLength), item.Value,
-                    commaBeforePadType);
+                buffer.Spaces(this.MaxValueLength - item.ValueLength).Add(item.Value, commaBeforePadType);
                 return;
         }
 
         if (item.Type === JsonItemType.Null) {
-            buffer.Add(this._pads.Spaces(this._maxDigBeforeDec - item.ValueLength), item.Value,
-                commaBeforePadType, this._pads.Spaces(this.CompositeValueLength - this._maxDigBeforeDec));
+            buffer.Spaces(this._maxDigBeforeDec - item.ValueLength)
+                .Add(item.Value, commaBeforePadType).Spaces(this.CompositeValueLength - this._maxDigBeforeDec);
             return;
         }
 
@@ -168,8 +166,7 @@ export class TableTemplate {
         if (this._numberListAlignment === NumberListAlignment.Normalize) {
             const parsedVal = Number(item.Value);
             const reformattedStr = parsedVal.toFixed(this._maxDigAfterDec);
-            buffer.Add(this._pads.Spaces(this.CompositeValueLength - reformattedStr.length), reformattedStr,
-                commaBeforePadType);
+            buffer.Spaces(this.CompositeValueLength - reformattedStr.length).Add(reformattedStr, commaBeforePadType);
             return;
         }
 
@@ -186,7 +183,7 @@ export class TableTemplate {
             rightPad = this.CompositeValueLength - this._maxDigBeforeDec;
         }
 
-        buffer.Add(this._pads.Spaces(leftPad), item.Value, commaBeforePadType, this._pads.Spaces(rightPad));
+        buffer.Spaces(leftPad).Add(item.Value, commaBeforePadType).Spaces(rightPad);
     }
 
     /**

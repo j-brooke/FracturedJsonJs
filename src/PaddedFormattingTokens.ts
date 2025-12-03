@@ -56,12 +56,6 @@ export class PaddedFormattingTokens {
             (opts.UseTabToIndent)? "\t" : " ".repeat(opts.IndentSpaces),
         ];
 
-        // Same with spaces
-        this._spaceStrings = [
-            "",
-            " ",
-        ];
-
         this._commaLen = strLenFunc(this._comma);
         this._colonLen = strLenFunc(this._colon);
         this._commentLen = strLenFunc(this._comment);
@@ -123,15 +117,6 @@ export class PaddedFormattingTokens {
         return this._indentStrings[level];
     }
 
-    Spaces(level: number): string {
-        if (level >= this._spaceStrings.length) {
-            for (let i = this._spaceStrings.length; i <= level; ++i)
-                this._spaceStrings.push(" ".repeat(i));
-        }
-
-        return this._spaceStrings[level];
-    }
-
     private readonly _comma: string;
     private readonly _colon: string;
     private readonly _comment: string;
@@ -154,5 +139,4 @@ export class PaddedFormattingTokens {
     private readonly _objStartLen: number[];
     private readonly _objEndLen: number[];
     private readonly _indentStrings: string[];
-    private readonly _spaceStrings: string[];
 }
