@@ -16,10 +16,10 @@ export class StringJoinBuffer implements IBuffer {
      * Add the requested number of spaces.
      */
     Spaces(count: number): IBuffer {
-        // TODO: Experiment for most efficient approach
-        for (let i = 0; i < count; ++i)
-            this._lineBuff.push(' ');
-
+        const spacesStr = (count<StringJoinBuffer.SPACES_CACHE.length)
+            ? StringJoinBuffer.SPACES_CACHE[count]
+            : ' '.repeat(count);
+        this._lineBuff.push(spacesStr);
         return this;
     }
 
@@ -48,12 +48,13 @@ export class StringJoinBuffer implements IBuffer {
         return this._docBuff.join("");
     }
 
+    private static readonly SPACES_CACHE = Array.from({ length: 64 }, (_, i) => " ".repeat(i));
     private _lineBuff: string[] = [];
     private readonly _docBuff: string[] = [];
 
     /**
-     * Takes the contents of _lineBuff and merges them into a string and adds it to _docBuff.  If desired,
-     * we trim trailing whitespace in the process.
+     * Takes the contents of _lineBuff and merges them into a string and adds it to _docBuff.  We trim trailing
+     * whitespace in the process.
      */
     private AddLineToWriter(eolString: string): void {
         if (this._lineBuff.length===0 && eolString.length===0)
