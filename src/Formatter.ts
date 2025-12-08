@@ -10,6 +10,7 @@ import {FracturedJsonError} from "./FracturedJsonError";
 import {Parser} from "./Parser";
 import {ConvertDataToDom} from "./ConvertDataToDom";
 import {TableCommaPlacement} from "./TableCommaPlacement";
+import {TableColumnType} from "./TableColumnType";
 
 /**
  * Class that writes JSON data in a human-friendly format.  Comments are optionally supported.  While many options
@@ -42,7 +43,7 @@ export class Formatter {
      * @param startingDepth starting indentation level for output
      */
     Reformat(jsonText: string, startingDepth: number = 0): string {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
@@ -59,7 +60,7 @@ export class Formatter {
      * @param recursionLimit nesting level at which we give up and assume we were given a circular reference
      */
     Serialize(element: any, startingDepth: number = 0, recursionLimit:number = 100): string | undefined {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
 
         const docModel = ConvertDataToDom(element, undefined, recursionLimit);
         if (!docModel)
@@ -78,7 +79,7 @@ export class Formatter {
      * @constructor
      */
     Minify(jsonText:string): string {
-        const buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        const buffer = new StringJoinBuffer();
         const parser = new Parser();
         parser.Options = this.Options;
         const docModel = parser.ParseTopLevel(jsonText, true);
@@ -88,7 +89,7 @@ export class Formatter {
         return buffer.AsString();
     }
 
-    private _buffer:IBuffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+    private _buffer:IBuffer = new StringJoinBuffer();
     private _pads:PaddedFormattingTokens =
         new PaddedFormattingTokens(new FracturedJsonOptions(), Formatter.StringLengthByCharCount);
 
@@ -98,10 +99,10 @@ export class Formatter {
 
         for (const item of docModel) {
             this.ComputeItemLengths(item);
-            this.FormatItem(item, startingDepth, false);
+            this.FormatItem(item, startingDepth, false, null);
         }
 
-        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        this._buffer = new StringJoinBuffer();
     }
 
     private MinifyTopLevel(docModel: JsonItem[], buffer: IBuffer) {
@@ -112,7 +113,7 @@ export class Formatter {
         for (const item of docModel)
             atStartOfNewLine = this.MinifyItem(item, atStartOfNewLine);
 
-        this._buffer = new StringJoinBuffer(this.Options.OmitTrailingWhitespace);
+        this._buffer = new StringJoinBuffer();
     }
 
     /**
@@ -176,11 +177,14 @@ export class Formatter {
      * Adds a formatted version of any item to the buffer, including indentation and newlines as needed.  This
      * could span multiple lines.
      */
-    private FormatItem(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
+    private FormatItem(item: JsonItem,
+                       depth: number,
+                       includeTrailingComma: boolean,
+                       parentTemplate: TableTemplate | null): void {
         switch (item.Type) {
             case JsonItemType.Array:
             case JsonItemType.Object:
-                this.FormatContainer(item, depth, includeTrailingComma);
+                this.FormatContainer(item, depth, includeTrailingComma, parentTemplate);
                 break;
             case JsonItemType.BlankLine:
                 this.FormatBlankLine();
@@ -191,9 +195,9 @@ export class Formatter {
                 break;
             default:
                 if (item.RequiresMultipleLines)
-                    this.FormatSplitKeyValue(item, depth, includeTrailingComma);
+                    this.FormatSplitKeyValue(item, depth, includeTrailingComma, parentTemplate);
                 else
-                    this.FormatInlineElement(item, depth, includeTrailingComma);
+                    this.FormatInlineElement(item, depth, includeTrailingComma, parentTemplate);
                 break;
         }
     }
@@ -202,13 +206,27 @@ export class Formatter {
      * Adds the representation for an array or object to the buffer, including all necessary indents, newlines, etc.
      * The array/object might be formatted inline, compact multiline, table, or expanded, according to circumstances.
      */
-    private FormatContainer(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
+    private FormatContainer(item: JsonItem,
+                            depth: number,
+                            includeTrailingComma: boolean,
+                            parentTemplate: TableTemplate | null): void {
         // Try to inline or compact-multiline format, as long as we're deeper than AlwaysExpandDepth.  Of course,
         // there may be other disqualifying factors that are discovered along the way.
         if (depth > this.Options.AlwaysExpandDepth) {
-            if (this.FormatContainerInline(item, depth, includeTrailingComma))
+            if (this.FormatContainerInline(item, depth, includeTrailingComma, parentTemplate))
                 return;
-            if (this.FormatContainerCompactMultiline(item, depth, includeTrailingComma))
+        }
+
+        // Create a helper object to measure how much space we'll need.  If there's a chance that we'll be able to
+        // format this container as a table or compact array, we need to measure recursively.  Otherwise, we still
+        // might need top level measurements for aligning properties and such.
+        const recursiveTemplate = (item.Complexity <= this.Options.MaxCompactArrayComplexity)
+            || (item.Complexity <= this.Options.MaxTableRowComplexity + 1);
+        const template = new TableTemplate(this._pads, this.Options.NumberListAlignment);
+        template.MeasureTableRoot(item, recursiveTemplate);
+
+        if (depth > this.Options.AlwaysExpandDepth) {
+            if (this.FormatContainerCompactMultiline(item, depth, includeTrailingComma, template, parentTemplate))
                 return;
         }
 
@@ -216,11 +234,11 @@ export class Formatter {
         // AlwaysExpandDepth=0, we can table format it.  But if AlwaysExpandDepth=1, we can't format the root
         // as a table, since a table's children are always inlined (and thus not expanded).
         if (depth >= this.Options.AlwaysExpandDepth) {
-            if (this.FormatContainerTable(item, depth, includeTrailingComma))
+            if (this.FormatContainerTable(item, depth, includeTrailingComma, template, parentTemplate))
                 return;
         }
 
-        this.FormatContainerExpanded(item, depth, includeTrailingComma);
+        this.FormatContainerExpanded(item, depth, includeTrailingComma, template, parentTemplate);
     }
 
 
@@ -229,15 +247,38 @@ export class Formatter {
      * etc., if the array/object qualifies.
      * Returns true if the content was added.
      */
-    private FormatContainerInline(item: JsonItem, depth: number, includeTrailingComma: boolean): boolean {
+    private FormatContainerInline(item: JsonItem, depth: number, includeTrailingComma: boolean,
+                                  parentTemplate: TableTemplate | null): boolean {
         if (item.RequiresMultipleLines)
             return false;
-        const lengthToConsider = item.MinimumTotalLength + ((includeTrailingComma)? this._pads.CommaLen : 0);
+
+        // If we need to line up this item's value with others from the parent container, use the parentTemplate's
+        // measurements to account for padding.
+        let prefixLength;
+        let nameLength;
+        if (parentTemplate) {
+            prefixLength = (parentTemplate.PrefixCommentLength > 0)
+                ? parentTemplate.PrefixCommentLength + this._pads.CommentLen
+                : 0;
+            nameLength = (parentTemplate.NameLength > 0)? parentTemplate.NameLength + this._pads.ColonLen : 0;
+        }
+        else {
+            prefixLength = (item.PrefixCommentLength > 0) ? item.PrefixCommentLength + this._pads.CommentLen : 0;
+            nameLength = (item.NameLength > 0)? item.NameLength + this._pads.ColonLen : 0;
+        }
+
+        const lengthToConsider = prefixLength
+            + nameLength
+            + +((item.MiddleCommentLength > 0) ? item.MiddleCommentLength + this._pads.CommentLen : 0)
+            + item.ValueLength
+            + ((item.PostfixCommentLength > 0) ? item.PostfixCommentLength + this._pads.CommentLen : 0)
+            + ((includeTrailingComma) ? this._pads.CommaLen : 0);
+
         if (item.Complexity > this.Options.MaxInlineComplexity || lengthToConsider > this.AvailableLineSpace(depth))
             return false;
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
-        this.InlineElement(item, includeTrailingComma);
+        this.InlineElement(item, includeTrailingComma, parentTemplate);
         this._buffer.EndLine(this._pads.EOL);
 
         return true;
@@ -249,30 +290,38 @@ export class Formatter {
      * lines but with each child written inline and several of them per line.
      * Returns true if the content was added
      */
-    private FormatContainerCompactMultiline(item:JsonItem, depth:number, includeTrailingComma: boolean): boolean {
+    private FormatContainerCompactMultiline(item:JsonItem,
+                                            depth:number,
+                                            includeTrailingComma: boolean,
+                                            template: TableTemplate,
+                                            parentTemplate: TableTemplate | null): boolean {
         if (item.Type !== JsonItemType.Array)
+            return false;
+        if (item.Children.length === 0 || item.Children.length < this.Options.MinCompactArrayRowItems)
             return false;
         if (item.Complexity > this.Options.MaxCompactArrayComplexity)
             return false;
         if (item.RequiresMultipleLines)
             return false;
 
-        // If all items are alike, we'll want to format each element as if it were a table row.
-        const template = new TableTemplate(this._pads, this.Options.NumberListAlignment);
-        template.MeasureTableRoot(item);
+        const useTableFormatting = template.Type !== TableColumnType.Unknown && template.Type !== TableColumnType.Mixed;
 
+        // If we can't fit lots of them on a line, compact multiline isn't a good choice.  Table would likely
+        // be better.
         const likelyAvailableLineSpace = this.AvailableLineSpace(depth + 1);
-        let avgItemWidth = this._pads.CommaLen;
-        if (template.IsRowDataCompatible)
+
+        let avgItemWidth = this._pads.CommentLen;
+        if (useTableFormatting) {
             avgItemWidth += template.TotalLength;
-        else
-            avgItemWidth += (item.Children.map(ch => ch.MinimumTotalLength).reduce((p:number,c:number) => p+c, 0)
-                / item.Children.length);
+        } else {
+            avgItemWidth += item.Children.map(ch => ch.MinimumTotalLength).reduce((p: number, c: number) => p + c, 0)
+                / item.Children.length;
+        }
         if (avgItemWidth * this.Options.MinCompactArrayRowItems > likelyAvailableLineSpace)
             return false;
 
         // Add prefixString, indent, prefix comment, starting bracket (with no EOL).
-        const depthAfterColon = this.StandardFormatStart(item, depth);
+        const depthAfterColon = this.StandardFormatStart(item, depth, parentTemplate);
         this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty));
 
         const availableLineSpace = this.AvailableLineSpace(depthAfterColon + 1);
@@ -282,7 +331,7 @@ export class Formatter {
             const child = item.Children[i];
             const needsComma = (i < item.Children.length - 1);
             const spaceNeededForNext = ((needsComma)? this._pads.CommaLen : 0)
-                + ((template.IsRowDataCompatible)? template.TotalLength : child.MinimumTotalLength);
+                + ((useTableFormatting)? template.TotalLength : child.MinimumTotalLength);
 
             if (remainingLineSpace < spaceNeededForNext) {
                 this._buffer.EndLine(this._pads.EOL).Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon+1));
@@ -290,10 +339,10 @@ export class Formatter {
             }
 
             // Write it out
-            if (template.IsRowDataCompatible)
+            if (useTableFormatting)
                 this.InlineTableRowSegment(template, child, needsComma, false);
             else
-                this.InlineElement(child, needsComma);
+                this.InlineElement(child, needsComma, null);
             remainingLineSpace -= spaceNeededForNext;
         }
 
@@ -310,12 +359,20 @@ export class Formatter {
      * as a single line, with their pieces formatted to line up.  This only works if the structures and types
      * are consistent for all rows.  Returns true if the content was added.
      */
-    private FormatContainerTable(item: JsonItem, depth: number, includeTrailingComma: boolean): boolean {
+    private FormatContainerTable(item: JsonItem, depth: number, includeTrailingComma: boolean,
+                                 template: TableTemplate, parentTemplate: TableTemplate | null): boolean {
         // If this element's children are too complex to be written inline, don't bother.
         if (item.Complexity > this.Options.MaxTableRowComplexity + 1)
             return false;
 
-        const availableSpace = this.AvailableLineSpace(depth + 1) - this._pads.CommaLen;
+        // If any particular row would require multiple lines, we can't table format this as a table.
+        if (template.RequiresMultipleLines)
+            return false;
+
+        // Figure out the space available to each row, not counting ending commas.  Note that if there's a middle
+        // comment with a newline, we'll be indenting more than normal.
+        const availableSpaceDepth = (item.MiddleCommentHasNewLine) ? depth + 2 : depth + 1;
+        const availableSpace = this.AvailableLineSpace(availableSpaceDepth) - this._pads.CommaLen;
 
         // If any child element is too long even without formatting, don't bother.
         const isChildTooLong = item.Children.filter(ch => !Formatter.IsCommentOrBlankLine(ch.Type))
@@ -323,14 +380,7 @@ export class Formatter {
         if (isChildTooLong)
             return false;
 
-        // Create a helper object to measure how much space we'll need.  If this item's children aren't sufficiently
-        // similar, IsRowDataCompatible will be false.
-        const template = new TableTemplate(this._pads, this.Options.NumberListAlignment);
-        template.MeasureTableRoot(item);
-        if (!template.IsRowDataCompatible)
-            return false;
-
-        // If the rows won't fit with everything (including descendents) tabular, try dropping the columns for
+        // If the rows don't fit with everything (including descendents) tabular, try dropping the columns for
         // the deepest nested items, repeatedly, until it either fits or we give up.
         //
         // For instance, here's an example of what fully tabular would look like:
@@ -346,7 +396,7 @@ export class Formatter {
         if (!template.TryToFit(availableSpace))
             return false;
 
-        const depthAfterColon = this.StandardFormatStart(item, depth);
+        const depthAfterColon = this.StandardFormatStart(item, depth, parentTemplate);
         this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty)).EndLine(this._pads.EOL);
 
         // Take note of the position of the last actual element, for comma decisions.  The last element
@@ -379,13 +429,22 @@ export class Formatter {
      * Adds the representation for an array or object to the buffer, including all necessary indents, newlines, etc.,
      * broken out on separate lines.  This is the most general case that always works.
      */
-    private FormatContainerExpanded(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
-        const depthAfterColon = this.StandardFormatStart(item, depth);
+    private FormatContainerExpanded(item: JsonItem, depth: number, includeTrailingComma: boolean,
+                                    template: TableTemplate, parentTemplate: TableTemplate | null): void {
+        const depthAfterColon = this.StandardFormatStart(item, depth, parentTemplate);
         this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty)).EndLine(this._pads.EOL);
+
+        // Decide whether to align this container's property values.  If so, pass this container's template along
+        // to its children so they know how to align their property values.
+        const alignProps = item.Type === JsonItemType.Object
+            && template.NameLength - template.NameMinimum <= this.Options.MaxPropNamePadding
+            && !template.AnyMiddleCommentHasNewline
+            && this.AvailableLineSpace(depth + 1) >= template.AtomicItemSize();
+        const templateToPass = (alignProps)? template : null;
 
         const lastElementIndex = Formatter.IndexOfLastElement(item.Children);
         for (let i=0; i<item.Children.length; ++i)
-            this.FormatItem(item.Children[i], depthAfterColon+1, (i<lastElementIndex));
+            this.FormatItem(item.Children[i], depthAfterColon+1, (i<lastElementIndex), templateToPass);
 
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depthAfterColon),
             this._pads.End(item.Type, BracketPaddingType.Empty));
@@ -409,9 +468,10 @@ export class Formatter {
     /**
      * Adds an element to the buffer that can be written as a single line, including indents and newlines.
      */
-    private FormatInlineElement(item: JsonItem, depth: number, includeTrailingComma: boolean): void {
+    private FormatInlineElement(item: JsonItem, depth: number, includeTrailingComma: boolean,
+                                parentTemplate: TableTemplate | null): void {
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
-        this.InlineElement(item, includeTrailingComma);
+        this.InlineElement(item, includeTrailingComma, parentTemplate);
         this._buffer.EndLine(this._pads.EOL);
     }
 
@@ -419,8 +479,9 @@ export class Formatter {
      *  Adds an item to the buffer, including comments and indents and such, where a comment between the
      *  prop name and prop value needs to span multiple lines.
      */
-    private FormatSplitKeyValue(item: JsonItem, depth:number, includeTrailingComma: boolean): void {
-        this.StandardFormatStart(item, depth);
+    private FormatSplitKeyValue(item: JsonItem, depth:number, includeTrailingComma: boolean,
+                                parentTemplate: TableTemplate | null): void {
+        this.StandardFormatStart(item, depth, parentTemplate);
         this._buffer.Add(item.Value);
         this.StandardFormatEnd(item, includeTrailingComma);
     }
@@ -430,21 +491,28 @@ export class Formatter {
      * Returns the depth number to be used for everything after this.  In some cases, we print a prop label
      * on one line, and then the value on another, at a greater indentation level.
      */
-    private StandardFormatStart(item: JsonItem, depth: number): number {
-        // Everything is straightforward until the colon
+    private StandardFormatStart(item: JsonItem, depth: number, parentTemplate: TableTemplate | null): number {
         this._buffer.Add(this.Options.PrefixString, this._pads.Indent(depth));
-        if (item.PrefixCommentLength > 0)
-            this._buffer.Add(item.PrefixComment, this._pads.Comment);
 
-        if (item.NameLength > 0)
-            this._buffer.Add(item.Name, this._pads.Colon);
+        if (parentTemplate) {
+            this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, parentTemplate.PrefixCommentLength,
+                this._pads.Comment, false);
+            this.AddToBufferFixed(item.Name, item.NameLength, parentTemplate.NameLength, this._pads.Colon,
+                this.Options.ColonBeforePropNamePadding);
+        } else {
+            this.AddToBuffer(item.PrefixComment, item.PrefixCommentLength, this._pads.Comment);
+            this.AddToBuffer(item.Name, item.NameLength, this._pads.Colon);
+        }
 
         if (item.MiddleCommentLength === 0)
             return depth;
 
-        // If there's a middle comment, we write it on the same line and move along.  Easy.
-        if (item.MiddleComment.indexOf("\n") < 0) {
-            this._buffer.Add(item.MiddleComment, this._pads.Comment);
+        // If there's an inlineable middle comment, we write it on the same line and move along.  Easy.
+        if (!item.MiddleCommentHasNewLine) {
+            const middlePad = (parentTemplate)
+                ? parentTemplate.MiddleCommentLength - item.MiddleCommentLength
+                : 0;
+            this._buffer.Add(item.MiddleComment).Spaces(middlePad).Add(this._pads.Comment);
             return depth;
         }
 
@@ -461,7 +529,7 @@ export class Formatter {
 
     /**
      * Do the stuff that's usually the same for the end of all formatted items, like trailing commas and postfix
-     * comments.
+     * comments.  This is only called when it's the last thing on the line.
      */
     private StandardFormatEnd(item: JsonItem, includeTrailingComma: boolean): void {
         if (includeTrailingComma && item.IsPostCommentLineStyle)
@@ -478,18 +546,24 @@ export class Formatter {
      * comments and children when appropriate.  It DOES NOT include indentation, newlines, or any of that.  This
      * should only be called if item.RequiresMultipleLines is false.
      */
-    private InlineElement(item: JsonItem, includeTrailingComma: boolean): void {
+    private InlineElement(item: JsonItem, includeTrailingComma: boolean, parentTemplate: TableTemplate | null): void {
         if (item.RequiresMultipleLines)
             throw new FracturedJsonError("Logic error - trying to inline invalid element");
 
-        if (item.PrefixCommentLength > 0)
-            this._buffer.Add(item.PrefixComment, this._pads.Comment);
-
-        if (item.NameLength > 0)
-            this._buffer.Add(item.Name, this._pads.Colon);
-
-        if (item.MiddleCommentLength > 0)
-            this._buffer.Add(item.MiddleComment, this._pads.Comment);
+        // If parentTemplate is provided, we need to align this item's value with its siblings on other rows.  (This
+        // typically means that the parent container can't be table formatted, but we are aligning property values.)
+        if (parentTemplate) {
+            this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, parentTemplate.PrefixCommentLength,
+                this._pads.Comment, false);
+            this.AddToBufferFixed(item.Name, item.NameLength, parentTemplate.NameLength, this._pads.Colon,
+                this.Options.ColonBeforePropNamePadding);
+            this.AddToBufferFixed(item.MiddleComment, item.MiddleCommentLength, parentTemplate.MiddleCommentLength,
+                this._pads.Comment, false);
+        } else {
+            this.AddToBuffer(item.PrefixComment, item.PrefixCommentLength, this._pads.Comment);
+            this.AddToBuffer(item.Name, item.NameLength, this._pads.Colon);
+            this.AddToBuffer(item.MiddleComment, item.MiddleCommentLength, this._pads.Comment);
+        }
 
         this.InlineElementRaw(item);
 
@@ -511,7 +585,7 @@ export class Formatter {
             this._buffer.Add(this._pads.ArrStart(padType));
 
             for (let i = 0; i < item.Children.length; ++i)
-                this.InlineElement(item.Children[i], (i<item.Children.length-1));
+                this.InlineElement(item.Children[i], (i<item.Children.length-1), null);
 
             this._buffer.Add(this._pads.ArrEnd(padType));
         }
@@ -520,7 +594,7 @@ export class Formatter {
             this._buffer.Add(this._pads.ObjStart(padType));
 
             for (let i = 0; i < item.Children.length; ++i)
-                this.InlineElement(item.Children[i], (i<item.Children.length-1));
+                this.InlineElement(item.Children[i], (i<item.Children.length-1), null);
 
             this._buffer.Add(this._pads.ObjEnd(padType));
         }
@@ -534,25 +608,17 @@ export class Formatter {
      */
     private InlineTableRowSegment(template: TableTemplate, item: JsonItem, includeTrailingComma: boolean,
                                   isWholeRow: boolean) {
-        if (template.PrefixCommentLength > 0)
-            this._buffer.Add(item.PrefixComment,
-                this._pads.Spaces(template.PrefixCommentLength - item.PrefixCommentLength),
-                this._pads.Comment);
-
-        if (template.NameLength > 0)
-            this._buffer.Add(item.Name,
-                this._pads.Spaces(template.NameLength - item.NameLength),
-                this._pads.Colon);
-
-        if (template.MiddleCommentLength > 0)
-            this._buffer.Add(item.MiddleComment,
-                this._pads.Spaces(template.MiddleCommentLength - item.MiddleCommentLength),
-                this._pads.Comment);
+        this.AddToBufferFixed(item.PrefixComment, item.PrefixCommentLength, template.PrefixCommentLength,
+            this._pads.Comment, false);
+        this.AddToBufferFixed(item.Name, item.NameLength, template.NameLength, this._pads.Colon,
+            this.Options.ColonBeforePropNamePadding);
+        this.AddToBufferFixed(item.MiddleComment, item.MiddleCommentLength, template.MiddleCommentLength,
+            this._pads.Comment, false);
 
         // Where to place the comma (if any) relative to the postfix comment (if any) and various padding.
         const commaBeforePad = this.Options.TableCommaPlacement == TableCommaPlacement.BeforePadding
             || this.Options.TableCommaPlacement == TableCommaPlacement.BeforePaddingExceptNumbers
-            && !template.IsNumberList;
+            && (template.Type !== TableColumnType.Number);
         let commaPos: CommaPosition;
         if (template.PostfixCommentLength > 0 && !template.IsAnyPostCommentLineStyle) {
             if (item.PostfixCommentLength > 0)
@@ -574,7 +640,7 @@ export class Formatter {
                 : "";
 
         if (template.Children.length > 0 && item.Type !== JsonItemType.Null) {
-            if (template.Type === JsonItemType.Array)
+            if (template.Type === TableColumnType.Array)
                 this.InlineTableRawArray(template, item);
             else
                 this.InlineTableRawObject(template, item);
@@ -583,10 +649,10 @@ export class Formatter {
 
             // Special adjustment if the object/array is shorter than the literal "null".
             if (template.ShorterThanNullAdjustment > 0) {
-                this._buffer.Add(this._pads.Spaces(template.ShorterThanNullAdjustment));
+                this._buffer.Spaces(template.ShorterThanNullAdjustment);
             }
         }
-        else if (template.IsNumberList) {
+        else if (template.Type === TableColumnType.Number) {
             const numberCommaType = (commaPos == CommaPosition.BeforeValuePadding)? commaType : "";
             template.FormatNumber(this._buffer, item, numberCommaType);
         }
@@ -594,7 +660,7 @@ export class Formatter {
             this.InlineElementRaw(item);
             if (commaPos == CommaPosition.BeforeValuePadding)
                 this._buffer.Add(commaType);
-            this._buffer.Add(this._pads.Spaces(template.CompositeValueLength - item.ValueLength));
+            this._buffer.Spaces(template.CompositeValueLength - item.ValueLength);
         }
 
         if (commaPos == CommaPosition.AfterValuePadding)
@@ -606,7 +672,7 @@ export class Formatter {
         if (commaPos == CommaPosition.BeforeCommentPadding)
             this._buffer.Add(commaType);
 
-        this._buffer.Add(this._pads.Spaces((template.PostfixCommentLength - item.PostfixCommentLength)));
+        this._buffer.Spaces((template.PostfixCommentLength - item.PostfixCommentLength));
 
         if (commaPos == CommaPosition.AfterCommentPadding)
             this._buffer.Add(commaType);
@@ -625,7 +691,7 @@ export class Formatter {
 
             if (isPastEndOfArray) {
                 // We're done writing this array's children out.  Now we just need to add space to line up with others.
-                this._buffer.Add(this._pads.Spaces(subTemplate.TotalLength));
+                this._buffer.Spaces(subTemplate.TotalLength);
                 if (!isLastInTemplate)
                     this._buffer.Add(this._pads.DummyComma);
             }
@@ -666,7 +732,7 @@ export class Formatter {
                     this._buffer.Add(this._pads.DummyComma);
             }
             else {
-                this._buffer.Add(this._pads.Spaces(subTemplate.TotalLength));
+                this._buffer.Spaces(subTemplate.TotalLength);
                 if (!isLastInTemplate)
                     this._buffer.Add(this._pads.DummyComma);
             }
@@ -674,9 +740,12 @@ export class Formatter {
         this._buffer.Add(this._pads.ObjEnd(template.PadType));
     }
 
+    /**
+     * Figures out how much room is allowed for inlining at this indentation level, considering
+     * MaxTotalLineLength, indentation size, and prefix string length.
+     */
     private AvailableLineSpace(depth: number): number {
-        return Math.min(this.Options.MaxInlineLength,
-            this.Options.MaxTotalLineLength - this._pads.PrefixStringLen - this.Options.IndentSpaces * depth);
+        return this.Options.MaxTotalLineLength - this._pads.PrefixStringLen - this.Options.IndentSpaces * depth;
     }
 
     /**
@@ -723,7 +792,7 @@ export class Formatter {
             this._buffer.Add(closeBracket);
         }
         else if (item.Type === JsonItemType.BlankLine) {
-            // Make sure we're starting on a new line before inserting a blank line.  Otherwise some can be lost.
+            // Make sure we're starting on a new line before inserting a blank line.  Otherwise, some can be lost.
             if (!atStartOfNewLine)
                 this._buffer.Add(newline);
             this._buffer.Add(newline);
@@ -762,6 +831,23 @@ export class Formatter {
         }
 
         return false;
+    }
+
+    private AddToBuffer(value:string, valueWidth:number, separator:string) {
+        if (valueWidth <= 0)
+            return;
+        this._buffer.Add(value, separator);
+    }
+
+    private AddToBufferFixed(value:string, valueWidth:number, fieldWidth:number, separator:string,
+                             separatorBeforePadding:boolean) {
+        if (fieldWidth <= 0)
+            return;
+        const padWidth = fieldWidth - valueWidth;
+        if (separatorBeforePadding)
+            this._buffer.Add(value, separator).Spaces(padWidth);
+        else
+            this._buffer.Add(value).Spaces(padWidth).Add(separator);
     }
 
     private static GetPaddingType(arrOrObj: JsonItem): BracketPaddingType {

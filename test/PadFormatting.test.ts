@@ -18,6 +18,7 @@ describe("Pad formatting tests", () => {
         formatter.Options.SimpleBracketPadding = false;
         formatter.Options.MaxCompactArrayComplexity = 0;
         formatter.Options.MaxTableRowComplexity = -1;
+        formatter.Options.MaxPropNamePadding = 0;
 
         let output = formatter.Reformat(input, 0);
 

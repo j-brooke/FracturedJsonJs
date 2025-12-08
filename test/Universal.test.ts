@@ -10,7 +10,7 @@ import {TableCommaPlacement} from "../src/TableCommaPlacement";
  *  Constraints:
  *     * The input is valid JSON
  *     * Input strings may not contain any of []{}:,\n
- *     * Values given to PrefixString" may only contain whitespace.
+ *     * Values given to "PrefixString" may only contain whitespace.
  *
  * Those rules exist to make the output easy to test without understanding the grammar.  Other files might contain
  * tests that don't impose these restrictions.
@@ -63,14 +63,12 @@ describe("Universal Tests", () => {
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
         for (const line of outputLines) {
-            const content = SkipPrefixAndIndent(params.Opts, line);
-
             // If the content is shorter than the max, it's all good.
-            if (content.length <= params.Opts.MaxInlineLength && line.length <= params.Opts.MaxTotalLineLength)
+            if (line.length <= params.Opts.MaxTotalLineLength)
                 continue;
 
             // We'll consider it a single element if there's no more than one comma.
-            const commaCount = content.match(/,/g)?.length ?? 0;
+            const commaCount = line.match(/,/g)?.length ?? 0;
             expect(commaCount).toBeLessThanOrEqual(1);
         }
     });
@@ -82,21 +80,19 @@ describe("Universal Tests", () => {
         const outputText = formatter.Reformat(params.Text);
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
-        const generalComplexity = Math.max(params.Opts.MaxInlineLength, params.Opts.MaxCompactArrayComplexity,
-            params.Opts.MaxTableRowComplexity);
+        const biggestComplexity = Math.max(params.Opts.MaxInlineLength, params.Opts.MaxCompactArrayComplexity,
+            params.Opts.MaxTableRowComplexity, 0);
 
         // Look at each line of the output separately, counting the nesting level in each.
         for (const line of outputLines) {
-            const content = SkipPrefixAndIndent(params.Opts, line);
-
             // Keep a running total of opens vs closes.  Since Formatter treats empty arrays and objects as complexity
             // zero just like primitives, we don't update nestLevel until we see something other than an empty.
             let openCount = 0;
             let nestLevel = 0;
             let topLevelCommaSeen = false;
             let multipleTopLevelItems = false;
-            for (let i = 0; i < content.length; ++i) {
-                const ch = content[i];
+            for (let i = 0; i < line.length; ++i) {
+                const ch = line[i];
                 switch (ch) {
                     case ' ':
                     case '\t':
@@ -128,7 +124,7 @@ describe("Universal Tests", () => {
             }
 
             // Otherwise, we can't actually tell if it's a compact array, table, or inline by looking at just the one line.
-            expect(nestLevel).toBeLessThanOrEqual(generalComplexity);
+            expect(nestLevel).toBeLessThanOrEqual(biggestComplexity);
         }
     });
 
@@ -160,12 +156,9 @@ describe("Universal Tests", () => {
         expect(backToStartOutput2).toBe(initialOutput);
     });
 
-    test.each(GenerateUniversalParams())("No trailing whitespace when option set", (params) => {
-        const modifiedOptions = Object.assign({}, params.Opts);
-        modifiedOptions.OmitTrailingWhitespace = true;
-
+    test.each(GenerateUniversalParams())("No trailing whitespace", (params) => {
         const formatter = new Formatter();
-        formatter.Options = modifiedOptions;
+        formatter.Options = params.Opts;
         const outputText = formatter.Reformat(params.Text);
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
@@ -183,7 +176,7 @@ interface IUniversalTestParams {
 }
 
 /**
- * Generates combos of input JSON and Formatter options to feed to all of the tests.
+ * Generates combos of input JSON and Formatter options to feed to all the tests.
  */
 function GenerateUniversalParams(): IUniversalTestParams[] {
     const standardBaseDir = "./test/StandardJsonFiles/";
@@ -220,27 +213,34 @@ function GenerateUniversalParams(): IUniversalTestParams[] {
 function GenerateOptions(): FracturedJsonOptions[] {
     const optsList: FracturedJsonOptions[] = [];
 
-    let opts = new FracturedJsonOptions();
+    let opts;
+
+    // Try lots of combinations of max complexity settings.
+    for (let inline=-1; inline <= 3; ++inline) {
+        for (let array= -1; array <= 3; ++array) {
+            for (let table = -1; table <= 3; ++table) {
+                opts = new FracturedJsonOptions();
+                opts.MaxInlineComplexity = inline;
+                opts.MaxCompactArrayComplexity = array;
+                opts.MaxTableRowComplexity = table;
+                optsList.push(opts);
+            }
+        }
+    }
+
+    // Try a bunch of line lengths.
+    for (let len = 12; len <= 55; ++len){
+        opts = new FracturedJsonOptions();
+        opts.MaxTotalLineLength = len;
+        optsList.push(opts);
+    }
+
+    // Miscellaneous settings.
+    opts = new FracturedJsonOptions();
     optsList.push(opts);
 
     opts = new FracturedJsonOptions();
     opts.MaxInlineComplexity = 10000;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = Number.MAX_VALUE;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 23;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 59;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxTotalLineLength = 59;
     optsList.push(opts);
 
     opts = new FracturedJsonOptions();
@@ -249,30 +249,6 @@ function GenerateOptions(): FracturedJsonOptions[] {
 
     opts = new FracturedJsonOptions();
     opts.JsonEolStyle = EolStyle.Lf;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 0;
-    opts.MaxCompactArrayComplexity = 0;
-    opts.MaxTableRowComplexity = 0;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 2;
-    opts.MaxCompactArrayComplexity = 0;
-    opts.MaxTableRowComplexity = 0;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 0;
-    opts.MaxCompactArrayComplexity = 2;
-    opts.MaxTableRowComplexity = 0;
-    optsList.push(opts);
-
-    opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 0;
-    opts.MaxCompactArrayComplexity = 0;
-    opts.MaxTableRowComplexity = 2;
     optsList.push(opts);
 
     opts = new FracturedJsonOptions();
@@ -318,11 +294,4 @@ function EolString(options: FracturedJsonOptions) {
         default:
             return "\n";
     }
-}
-
-function SkipPrefixAndIndent(options: FracturedJsonOptions, line: string): string {
-    // Skip past the prefix string and whitespace.
-    if (line.indexOf(options.PrefixString) != 0)
-        throw new Error("Output line does not begin with prefix string");
-    return  line.substring(options.PrefixString.length).trimStart();
 }
