@@ -366,4 +366,53 @@ describe("Table formatting tests", () => {
         expect(outputLines[2]).toContain('":');
         expect(outputLines[3]).toContain('":');
     });
+
+    test("Single columns with EOL comments work", () => {
+        // We want this array to be a single-column table.  It can't be done as a compact multiline array since
+        // it has end-of-line comments.  But it should be table-formattable so that the comments line up neatly.
+        const input = `
+            {
+                "Beatles Songs": [
+                    "Taxman"        ,  // George
+                    "Hey Jude"      ,  // Paul
+                    "Act Naturally" ,  // Ringo
+                    "Ticket To Ride"   // John
+                ]
+            }
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        expect(outputLines.length).toBe(8);
+        expect(DoInstancesLineUp(outputLines, '//')).toBeTruthy();
+    });
+
+    test("Single columns with numbers work", () => {
+        // If we turn off inline and complex array formatting, we'd like to see these numbers as a single-column table,
+        // with the decimal points aligned.
+        const input = `
+            {
+                "WeightsKg": {
+                    "Brown Bear": 389.0,
+                    "Golden Retriever": 29.0,
+                    "Garter Snake": 0.25
+                }
+            }
+        `;
+
+        const formatter = new Formatter();
+        formatter.Options.MaxCompactArrayComplexity = -1;
+        formatter.Options.MaxInlineComplexity = -1;
+        formatter.Options.NumberListAlignment = NumberListAlignment.Decimal;
+        formatter.Options.MaxTotalLineLength = 40;
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+
+        expect(outputLines.length).toBe(7);
+        expect(DoInstancesLineUp(outputLines, '.')).toBeTruthy();
+    });
 });

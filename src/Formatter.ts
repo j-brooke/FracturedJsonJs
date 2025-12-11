@@ -393,7 +393,7 @@ export class Formatter {
         //     { "a":   3, "b": { "x": 19, "y": -4 }   },
         //     { "a": 147, "b": { "y": 111, "z": -99 } }
         // ]
-        if (!template.TryToFit(availableSpace))
+        if (template.Type === TableColumnType.Mixed || !template.TryToFit(availableSpace))
             return false;
 
         const depthAfterColon = this.StandardFormatStart(item, depth, parentTemplate);

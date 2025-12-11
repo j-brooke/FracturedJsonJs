@@ -132,13 +132,15 @@ export class TableTemplate {
      * ]
      */
     TryToFit(maximumLength: number): boolean {
-        for (let complexity = this.GetTemplateComplexity(); complexity >= 1; --complexity) {
+        let complexity = this.GetTemplateComplexity();
+        while (true) {
             if (this.TotalLength <= maximumLength)
                 return true;
-            this.PruneAndRecompute(complexity - 1);
+            if (complexity <= 0)
+                return false;
+            complexity -= 1;
+            this.PruneAndRecompute(complexity);
         }
-
-        return false;
     }
 
     /**
