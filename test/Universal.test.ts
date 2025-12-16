@@ -1,6 +1,6 @@
 ﻿import {readdirSync, readFileSync} from "fs";
 import {CommentPolicy, EolStyle, Formatter, FracturedJsonOptions, NumberListAlignment} from "../src";
-import {TableCommaPlacement} from "../src/TableCommaPlacement";
+import {TableCommaPlacement} from "../src";
 
 /**
  * Tests that should pass with ANY input and ANY settings, within a few constraints.  These aren't particularly
@@ -80,8 +80,8 @@ describe("Universal Tests", () => {
         const outputText = formatter.Reformat(params.Text);
         const outputLines = outputText.trimEnd().split(EolString(params.Opts));
 
-        const biggestComplexity = Math.max(params.Opts.MaxInlineLength, params.Opts.MaxCompactArrayComplexity,
-            params.Opts.MaxTableRowComplexity, 0);
+        const biggestComplexity = Math.max(params.Opts.MaxInlineComplexity,
+            params.Opts.MaxCompactArrayComplexity, params.Opts.MaxTableRowComplexity, 0);
 
         // Look at each line of the output separately, counting the nesting level in each.
         for (const line of outputLines) {
@@ -252,7 +252,7 @@ function GenerateOptions(): FracturedJsonOptions[] {
     optsList.push(opts);
 
     opts = new FracturedJsonOptions();
-    opts.MaxInlineLength = 10;
+    opts.MaxInlineComplexity = 10;
     opts.MaxCompactArrayComplexity = 10;
     opts.MaxTableRowComplexity = 10;
     opts.MaxTotalLineLength = 1000;

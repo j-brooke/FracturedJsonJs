@@ -19,14 +19,6 @@ export class FracturedJsonOptions
     JsonEolStyle: EolStyle = EolStyle.Lf;
 
     /**
-     * Maximum length that the formatter can use when combining complex elements into a single line.  This
-     * includes comments, property names, etc. - everything except indentation and any PrefixString.  Note that
-     * lines containing only a single element can exceed this: a long string, or an element with a long prefix
-     * or postfix comment, for example.
-     */
-    MaxInlineLength: number = 2000000000;
-
-    /**
      * Maximum length (in characters, including indentation) when more than one simple value is put on a line.
      * individual values (e.g., long strings) may exceed this limit.
      */
@@ -71,7 +63,7 @@ export class FracturedJsonOptions
      * Determines whether commas in table-formatted rows are lined up in their own column after padding or placed
      * directly after each element, before padding spaces.
      */
-    TableCommaPlacement: TableCommaPlacement = TableCommaPlacement.AfterPadding;
+    TableCommaPlacement: TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
 
     /**
      * Minimum items per row to format an array with multiple items per line across multiple lines.  This is a
