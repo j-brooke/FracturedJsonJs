@@ -1,5 +1,11 @@
 # FracturedJsonJs Change Log
 
+## 5.0.1
+
+### Bug Fix
+
+Fixed a bug with the size evaluations of compact multiline arrays, which occasionally caused `MinCompactArrayRowItems` to be violated.
+
 ## 5.0.0
 
 ### Features
