@@ -310,7 +310,7 @@ export class Formatter {
         // be better.
         const likelyAvailableLineSpace = this.AvailableLineSpace(depth + 1);
 
-        let avgItemWidth = this._pads.CommentLen;
+        let avgItemWidth = this._pads.CommaLen;
         if (useTableFormatting) {
             avgItemWidth += template.TotalLength;
         } else {

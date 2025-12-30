@@ -59,6 +59,7 @@ describe("Length and complexity tests", () => {
         [90, 3, 4], // Two row compact multiline array, + two for []
         [70, 3, 5], // Three row compact multiline array, + two for []
         [50, 3, 9], // Not a compact multiline array.  1 per inner array, + two for [].
+        [57, 3, 9], // Not a compact multiline array.  1 per inner array, + two for [].
         [50, 2, 6], // Four row compact multiline array, + two for []
     ])("Correct line count for line length", (totalLen:number, itemsPerRow:number, expLines:number) => {
         const inputLines = [
