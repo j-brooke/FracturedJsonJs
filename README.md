@@ -6,12 +6,9 @@ neither too long nor too complex.  When several such lines are similar in struct
 fields aligned like a table.  Long arrays are written with multiple items per line across multiple lines.
 
 This `npm` module is part of a family of FracturedJson tools.
-* [Home page and Browser-based Formatter](https://j-brooke.github.io/FracturedJson/)
-* [FracturedJsonJs GitHub Page](https://github.com/j-brooke/FracturedJsonJs)
-* [FracturedJson GitHub Page](https://github.com/j-brooke/FracturedJson)
-* [FracturedJson Wiki](https://github.com/j-brooke/FracturedJson/wiki)
+* [FracturedJsonJs GitHub Repo](https://github.com/j-brooke/FracturedJsonJs)
+* [FracturedJson Wiki Home](https://github.com/j-brooke/FracturedJson/wiki)
 * [npm Package](https://www.npmjs.com/package/fracturedjsonjs)
-* [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=j-brooke.fracturedjsonvsc)
 
 ## Example
 
@@ -140,3 +137,6 @@ const textFromText = formatter.Reformat(inputText);
 console.log("From inputText:");
 console.log(textFromText);
 ```
+
+---
+[Project Wiki](https://github.com/j-brooke/FracturedJson/wiki) — [Formatting Options](https://github.com/j-brooke/FracturedJson/wiki/Options) — [Web Formatter](https://j-brooke.github.io/FracturedJson/) — [Implementations & Ports](https://github.com/j-brooke/FracturedJson/wiki/Available-Versions-and-Ports)
