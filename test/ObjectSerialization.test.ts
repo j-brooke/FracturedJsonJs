@@ -87,6 +87,13 @@ describe("Object serialization tests", () => {
             expect(fjMinified).toBe(nativeMinified);
         }
     });
+
+    test("Blank prop name serializes correctly", () => {
+        const input = { "": "foo" };
+        const formatter = new Formatter();
+        const output = formatter.Serialize(input);
+        expect(output?.trimEnd()).toBe('{"": "foo"}');
+    });
 });
 
 function ReadJsonFromFiles(): string[] {

@@ -27,7 +27,7 @@ export function ConvertDataToDom(element:any, propName?: string, recursionLimit:
 
     // Let native JSON deal with escapes and such in the prop names.
     const item = new JsonItem();
-    item.Name = (propName)? JSON.stringify(propName) : "";
+    item.Name = (propName!==undefined)? JSON.stringify(propName) : "";
 
     if (element === null) {
         item.Type = JsonItemType.Null;
