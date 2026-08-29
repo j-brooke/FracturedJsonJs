@@ -219,4 +219,27 @@ describe("Comment formatting tests", () => {
 
         expect(output.length).not.toContain("//");
     });
+
+    // In version 5.0, a blank line after a line comment would be moved above the line with the comment.
+    // We want it to stay where it is.
+    // https://github.com/j-brooke/FracturedJson/issues/64
+    test("Blank lines after line comments stay put", () => {
+        const inputLines = [
+            "{",
+            "    'foo': 'bar'   // baz",
+            "",
+            "}"
+        ];
+        const input = inputLines.join("\n").replace(/'/g, '"');
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.PreserveBlankLines = true;
+
+        let output = formatter.Reformat(input, 0);
+        let outputLines = output.trimEnd().split('\n');
+
+        expect(outputLines.length).toBe(4);
+        expect(outputLines[1]).toContain("baz");
+        expect(outputLines[2].length).toBe(0);
+    });
 });

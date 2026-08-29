@@ -145,8 +145,13 @@ function ProcessComment(state: ScannerState): JsonToken {
         const ch = state.Current();
         if (ch===_codeLF) {
             state.NewLine();
-            if (!isBlockComment)
-                return state.MakeTokenFromBuffer(TokenType.LineComment, true);
+            if (!isBlockComment) {
+                const newToken = state.MakeTokenFromBuffer(TokenType.LineComment, true);
+
+                // Just in case the next line is a blank line, set the token start to the start of the line.
+                state.SetTokenStart();
+                return newToken;
+            }
             continue;
         }
 
