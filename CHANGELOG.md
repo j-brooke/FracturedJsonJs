@@ -1,5 +1,12 @@
 # FracturedJsonJs Change Log
 
+## 5.0.2
+
+### Bug Fixes
+
+* Fixed a [bug](https://github.com/j-brooke/FracturedJsonJs/issues/18) where empty-string property names in objects given to to `Serialize` would result in invalid JSON.
+* Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/64) where a blank line after a line comment would be written before the comment line rather than after.
+
 ## 5.0.1
 
 ### Bug Fix
