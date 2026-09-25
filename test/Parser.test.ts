@@ -511,6 +511,26 @@ describe("Parser Tests", () => {
         expect(docModel[0].Children[1].PrefixComment).toBe("/*b*/");
     });
 
+    // TODO(v6): Enable this once ParseArray attaches a displaced unplacedComment as a postfix when a previous
+    //   element can take one, matching "Object with inline block comments 3".  Today /*a*/ is a standalone child.
+    test.skip("Array two comments after comma match object", () => {
+        const input = "[ 1, /*a*/ /*b*/ 2 ]";
+
+        const options = new FracturedJsonOptions();
+        options.CommentPolicy = CommentPolicy.Preserve;
+        options.AllowTrailingCommas = true;
+        options.PreserveBlankLines = true;
+
+        const parser = new Parser();
+        parser.Options = options;
+        const docModel = parser.ParseTopLevel(input, false);
+
+        expect(docModel.length).toBe(1);
+        expect(docModel[0].Children.length).toBe(2);
+        expect(docModel[0].Children[0].PostfixComment).toBe("/*a*/");
+        expect(docModel[0].Children[1].PrefixComment).toBe("/*b*/");
+    });
+
     test("Array Comments for Multiline Element", () => {
         // Comments that should be attached to a multi-line array.
         const inputSegments = [

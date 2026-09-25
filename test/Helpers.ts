@@ -1,8 +1,27 @@
 ﻿/**
- * Tests that the first occurence of the substring occurs at the same index in each line, if the line contains it.
+ * Number of distinct columns at which any of seekStrings occur.  Lines with no match are ignored.
+ * Returns 0 if none of the strings appear.  Returns 1 if every match shares one column.
  */
-export function DoInstancesLineUp(lines: string[], substring: string): boolean {
-    const indices = lines.map(str => str.indexOf(substring))
-        .filter(num => num >= 0);
-    return indices.length==0 || indices.every(num => num == indices[0]);
+export function CountDistinctColumns(lines: string[], ...seekStrings: string[]): number {
+    const indices = new Set<number>();
+    for (const seek of seekStrings) {
+        for (const line of lines) {
+            const idx = line.indexOf(seek);
+            if (idx >= 0)
+                indices.add(idx);
+        }
+    }
+    return indices.size;
+}
+
+/**
+ * Tests that occurrences of the given substrings share one column.
+ * A single substring that never appears counts as lined up.  Several substrings must all appear,
+ * and at that same column.
+ */
+export function DoInstancesLineUp(lines: string[], ...seekStrings: string[]): boolean {
+    const count = CountDistinctColumns(lines, ...seekStrings);
+    if (seekStrings.length <= 1)
+        return count <= 1;
+    return count === 1;
 }

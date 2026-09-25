@@ -66,6 +66,25 @@ export class FracturedJsonOptions
     TableCommaPlacement: TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
 
     /**
+     * If true, sections of items in a container can be formatted as tables instead of requiring all items to be a
+     * single table.  If some children need to be expanded, their siblings can still be table-formatted.
+     */
+    AllowTableSegments: boolean = false;
+
+    /**
+     * If true, blank lines force the sections above and below to be formatted as separate tables, if at all.
+     * Has no effect unless AllowTableSegments and PreserveBlankLines are true.
+     */
+    SplitTableSegmentsAtBlankLines: boolean = false;
+
+    /**
+     * If true, standalone comments force the sections above and below to be formatted as separate tables, if at all.
+     * This refers to comments on lines of their own, not ones that are considered attached to elements.
+     * Has no effect unless AllowTableSegments is true and CommentPolicy is Preserve.
+     */
+    SplitTableSegmentsAtComments: boolean = false;
+
+    /**
      * Minimum items per row to format an array with multiple items per line across multiple lines.  This is a
      * guideline, not a strict rule.
      */
@@ -92,6 +111,18 @@ export class FracturedJsonOptions
      * false: [ [1, 2, 3], [4] ] <br/>
      */
     SimpleBracketPadding: boolean = false;
+
+    /**
+     * If true, the first element of a non-inline array or object is written on the same line as its opening bracket,
+     * as long as it can be placed at the expected indentation.  Ignored if UseTabToIndent is true.
+     */
+    CollapseOpeningBrackets: boolean = false;
+
+    /**
+     * If true, a container's closing bracket is written on the same line as its last child when that child
+     * is a real JSON value with no postfix comment, and the combined line still fits in MaxTotalLineLength.
+     */
+    CollapseClosingBrackets: boolean = false;
 
     /**
      * If true, includes a space after property colons.

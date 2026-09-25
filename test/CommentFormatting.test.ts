@@ -242,4 +242,26 @@ describe("Comment formatting tests", () => {
         expect(outputLines[1]).toContain("baz");
         expect(outputLines[2].length).toBe(0);
     });
+
+    test("All comments preserved", () => {
+        const input = [
+            "{",
+            "    // 1",
+            "    /* 2 */ \"foo\": /* 3 */ \"bar\" // 4",
+            "    // 5",
+            "    ,",
+            "    // 6",
+            "}",
+        ].join("\n");
+        const formatter = new Formatter();
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.AllowTrailingCommas = true;
+
+        const output = formatter.Reformat(input, 0);
+        const outputLines = output.trimEnd().split("\n");
+
+        expect(outputLines.length).toBe(6);
+        for (let i = 1; i <= 6; ++i)
+            expect(output).toContain(i.toString());
+    });
 });

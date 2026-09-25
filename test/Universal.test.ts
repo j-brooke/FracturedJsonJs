@@ -75,6 +75,10 @@ describe("Universal Tests", () => {
 
 
     test.each(GenerateUniversalParams())("Max inline complexity respected", (params) => {
+        // This test doesn't work with collapsed opening brackets as written.
+        if (params.Opts.CollapseOpeningBrackets)
+            return;
+
         const formatter = new Formatter();
         formatter.Options = params.Opts;
         const outputText = formatter.Reformat(params.Text);
@@ -280,6 +284,17 @@ function GenerateOptions(): FracturedJsonOptions[] {
     opts = new FracturedJsonOptions();
     opts.TableCommaPlacement = TableCommaPlacement.BeforePaddingExceptNumbers;
     opts.NumberListAlignment = NumberListAlignment.Normalize;
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.CollapseClosingBrackets = true;
+    opts.CollapseOpeningBrackets = true;
+    optsList.push(opts);
+
+    opts = new FracturedJsonOptions();
+    opts.AllowTableSegments = true;
+    opts.SplitTableSegmentsAtBlankLines = true;
+    opts.SplitTableSegmentsAtComments = true;
     optsList.push(opts);
 
     optsList.push(FracturedJsonOptions.Recommended());

@@ -153,6 +153,10 @@ export class Parser {
 
                     if (unplacedComment) {
                         // There was a block comment before this one.  Add it as a standalone comment to make room.
+                        // TODO(v6): If elemNeedingPostComment is set, attach the displaced comment as its postfix
+                        //   instead.  Today `[1, /*a*/ /*b*/ 2]` leaves /*a*/ standalone; objects treat the matching
+                        //   `{ "w":1, /*a*/ /*b*/ "x":2 }` as postfix-of-w / prefix-of-x.  Changing this is a behavior
+                        //   break, so wait for the next major version.  See also the LineComment branch below.
                         childList.push(unplacedComment);
                         unplacedComment = undefined;
                     }
@@ -186,7 +190,9 @@ export class Parser {
                             token.InputPosition);
 
                     if (unplacedComment) {
-                        // A previous comment followed by a line-ending comment?  Add them both as standalone comments
+                        // A previous comment followed by a line-ending comment?  Add them both as standalone comments.
+                        // TODO(v6): Same as the BlockComment case above — if a previous element can take a postfix,
+                        //   attach the displaced comment there instead of emitting it standalone.
                         childList.push(unplacedComment);
                         childList.push(this.ParseSimple(token));
                         unplacedComment = undefined;
@@ -338,6 +344,10 @@ export class Parser {
                 case TokenType.EndObject:
                     if (phase === ObjectPhase.AfterPropName || phase === ObjectPhase.AfterColon)
                         throw new FracturedJsonError("Unexpected end of object", token.InputPosition);
+                    // Comments collected after the last property (or in an object with no properties) have nowhere
+                    // else to go.  Attach them as standalone children before closing.
+                    childList.push(...beforePropComments);
+                    beforePropComments = [];
                     endOfObject = true;
                     break;
                 case TokenType.String:

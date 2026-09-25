@@ -1,5 +1,19 @@
 # FracturedJsonJs Change Log
 
+## Unreleased
+
+### Features
+
+Segments of similar children can be table-formatted even when other children in the same array or object have to be expanded.  `AllowTableSegments` turns that on.  `SplitTableSegmentsAtBlankLines` and `SplitTableSegmentsAtComments` start a new segment at a preserved blank line or a standalone comment.
+
+Opening and closing brackets can share a line with the neighboring element.  `CollapseOpeningBrackets` writes the first element on the opening bracket's line when that element still starts at the normal indent (tabs disable this).  `CollapseClosingBrackets` writes the closing bracket on the last child's line when that child is a real value with no postfix comment and the combined line still fits in `MaxTotalLineLength`.
+
+All five settings default to false.
+
+### Bug Fixes
+
+* Comments after the last property of an object, including comments around a trailing comma, are preserved. They used to be dropped on the way out of the object.
+
 ## 5.0.2
 
 ### Bug Fixes

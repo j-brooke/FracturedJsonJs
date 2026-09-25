@@ -2,7 +2,7 @@
 // lined up, when possible.
 import {CommentPolicy, EolStyle, Formatter, NumberListAlignment, TableCommaPlacement} from "../src";
 // @ts-ignore
-import {DoInstancesLineUp} from "./Helpers";
+import {CountDistinctColumns, DoInstancesLineUp} from "./Helpers";
 
 describe("Table formatting tests", () => {
     test("Nested elements line up", () => {
@@ -415,4 +415,111 @@ describe("Table formatting tests", () => {
         expect(outputLines.length).toBe(7);
         expect(DoInstancesLineUp(outputLines, '.')).toBeTruthy();
     });
+
+    test("No segment still does inner table", () => {
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 140;
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.PreserveBlankLines = true;
+        formatter.Options.AllowTableSegments = false;
+
+        const output = formatter.Reformat(segmentData, 0);
+        const outputLines = output.trimEnd().split("\n");
+
+        // Given enough line length, children of the inner Subs should all be table-aligned together.
+        expect(DoInstancesLineUp(outputLines, "act_tackle1", "act_neck_grab")).toBeTruthy();
+
+        // The outer Subs children are not table-aligned, since AllowTableSegments is false and one of their
+        // siblings is too long for the table, thus disqualifying them all.
+        expect(CountDistinctColumns(outputLines, "act_bite", "act_headbutt")).toBe(2);
+    });
+
+    test("Allow segments tables both", () => {
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 140;
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.PreserveBlankLines = true;
+        formatter.Options.AllowTableSegments = true;
+
+        const output = formatter.Reformat(segmentData, 0);
+        const outputLines = output.trimEnd().split("\n");
+
+        // With AllowTableSegments on but no splitting on blank lines or comments, both blocks should be
+        // table-formatted, given enough room.  In both cases the single-line objects are members of the same table.
+        expect(DoInstancesLineUp(outputLines, "act_tackle1", "act_neck_grab")).toBeTruthy();
+        expect(DoInstancesLineUp(outputLines, "act_bite", "act_headbutt")).toBeTruthy();
+    });
+
+    test("Split blank makes small enough segments", () => {
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 120;
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.PreserveBlankLines = true;
+        formatter.Options.AllowTableSegments = true;
+        formatter.Options.SplitTableSegmentsAtBlankLines = true;
+        formatter.Options.SplitTableSegmentsAtComments = false;
+
+        const output = formatter.Reformat(segmentData, 0);
+        const outputLines = output.trimEnd().split("\n");
+
+        // At a width of 120, there isn't room to fit a table with all the outer items taken together.
+        // SplitTableSegmentsAtBlankLines lets the button elements be tabled without the others.
+        expect(DoInstancesLineUp(outputLines, "act_bite", "act_headbutt")).toBeTruthy();
+
+        // The inner items still don't qualify, since they're separated by comments, not blank lines.
+        expect(CountDistinctColumns(outputLines, "act_tackle1", "act_neck_grab")).toBe(2);
+    });
+
+    test("Split comments makes small enough segments", () => {
+        const formatter = new Formatter();
+        formatter.Options.MaxTotalLineLength = 120;
+        formatter.Options.CommentPolicy = CommentPolicy.Preserve;
+        formatter.Options.PreserveBlankLines = true;
+        formatter.Options.AllowTableSegments = true;
+        formatter.Options.SplitTableSegmentsAtBlankLines = false;
+        formatter.Options.SplitTableSegmentsAtComments = true;
+
+        const output = formatter.Reformat(segmentData, 0);
+        const outputLines = output.trimEnd().split("\n");
+
+        // At a width of 120, there isn't room to fit a table with all the inner items taken together.
+        // SplitTableSegmentsAtComments lets the button elements be tabled without the others.
+        expect(DoInstancesLineUp(outputLines, "act_tackle1", "act_neck_grab")).toBeTruthy();
+
+        // The outer items still don't qualify, since they're separated by blank lines, not comments.
+        expect(CountDistinctColumns(outputLines, "act_bite", "act_headbutt")).toBe(2);
+    });
 });
+
+const segmentData = `
+{
+    "Type": "Panel",
+    "Pos" : [0, 0],
+    "Dim" : [100, 100],
+    "Subs": [
+        { "Type": "Text", "Pos": [0, 0], "Text": "Combat actions" },
+
+        { "Type": "Btn", "Pos": [0, 5], "Label": "Kick", "Action": "act_kick" },
+        { "Type": "Btn", "Pos": [25, 5], "Label": "Punch", "Action": "act_punch" },
+        { "Type": "Btn", "Pos": [50, 5], "Label": "Bite", "Action": "act_bite" },
+        { "Type": "Btn", "Pos": [75, 5], "Label": "Headbutt", "Action": "act_headbutt" },
+
+        { "Type": "Img", "Pos": [0, 0], "ImgID": 8323 },
+        { "Type": "Img", "Pos": [0, 50], "ImgID": 141 },
+        {
+            "Type": "Panel",
+            "Pos" : [0, 20],
+            "Dim" : [100, 80],
+            "Subs": [
+                { "Type": "Text", "Pos": [0, 0], "Text": "Grapple" },
+                //--
+                { "Type": "Btn", "Pos": [0, 5], "Label": "Tackle", "Action": "act_tackle1" },
+                { "Type": "Btn", "Pos": [25, 15], "Label": "Choke", "Action": "act_neck_grab" },
+                //--
+                { "Type": "Img", "Pos": [0, 0], "ImgID": 38212 },
+                { "Type": "Img", "Pos": [0, 30], "ImgID": 12 }
+            ]
+        }
+    ]
+}
+`;
