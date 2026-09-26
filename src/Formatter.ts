@@ -236,7 +236,10 @@ export class Formatter {
                 return;
         }
 
-        this.FormatContainerExpanded(item, depth, includeTrailingComma, template, parentTemplate);
+        if (item.Children.length === 0)
+            this.FormatEmptyContainerExpanded(item, depth, includeTrailingComma, parentTemplate);
+        else
+            this.FormatContainerExpanded(item, depth, includeTrailingComma, template, parentTemplate);
     }
 
     /**
@@ -288,6 +291,20 @@ export class Formatter {
         }
 
         this.WriteNonInlineCloseBracket(item, depthAfterColon, includeTrailingComma);
+        this.StandardFormatEnd(item, includeTrailingComma);
+    }
+
+    /**
+     * Adds the representation for an empty array or object to the buffer with the brackets on separate lines.
+     */
+    private FormatEmptyContainerExpanded(item: JsonItem, depth: number, includeTrailingComma: boolean,
+                                         parentTemplate: TableTemplate | null): void {
+        const depthAfterColon = this.StandardFormatStart(item, depth, parentTemplate);
+        this._buffer.Add(this._pads.Start(item.Type, BracketPaddingType.Empty)).EndLine(this._pads.EOL);
+        this.StartLine(depthAfterColon);
+        this._buffer.Add(this._pads.End(item.Type, BracketPaddingType.Empty));
+        this._currentLineLen = this.LinePrefixWidth(depthAfterColon)
+            + this._pads.EndLen(item.Type, BracketPaddingType.Empty);
         this.StandardFormatEnd(item, includeTrailingComma);
     }
 
@@ -347,6 +364,8 @@ export class Formatter {
 
             if (i < item.Children.length - 1)
                 this._buffer.EndLine(this._pads.EOL);
+            else
+                this._currentLineLen = this.LinePrefixWidth(depth + 1) + template.TotalLength + this._pads.CommaLen;
         }
 
         return true;
@@ -772,8 +791,8 @@ export class Formatter {
     }
 
     /**
-     * Write an opening bracket and either a newline plus indentation, or spaces to pad to the next indentation level.
-     * An empty container never collapses its opening bracket.  (The C# library currently throws in that case.)
+     * Write an opening bracket and either a newline, prefix string, and indentation, or spaces to pad to the next
+     * indentation level.  Empty containers are written by FormatEmptyContainerExpanded and do not reach here.
      */
     private WriteNonInlineOpeningBracket(item: JsonItem, depth: number, template: TableTemplate | null): void {
         // The first child can share the container's opening line when it would still begin at the same column as

@@ -124,6 +124,60 @@ describe("Collapse closing brackets", () => {
             expect(line.length).toBeLessThanOrEqual(opts.MaxTotalLineLength);
     });
 
+    test("Does not collapse when table would exceed max including comment", () => {
+        const input = "[[1, 22] /*x*/,[333, 4]]";
+        const opts = new FracturedJsonOptions();
+        opts.MaxTotalLineLength = 22;
+        opts.MaxTableRowComplexity = 1;
+        opts.CollapseClosingBrackets = true;
+        opts.CommentPolicy = CommentPolicy.Preserve;
+        opts.JsonEolStyle = EolStyle.Lf;
+
+        const output = reformat(input, opts);
+        const expected = [
+            "[",
+            "    [  1, 22] /*x*/,",
+            "    [333,  4]",
+            "]",
+        ].join("\n");
+        expect(output.trimEnd()).toBe(expected);
+        for (const line of linesOf(output))
+            expect(line.length).toBeLessThanOrEqual(opts.MaxTotalLineLength);
+    });
+
+    test("Does not collapse when table would exceed max", () => {
+        const input = "[[[3932,2399,444,222,1,9009]]]";
+        const opts = new FracturedJsonOptions();
+        opts.MaxTotalLineLength = 19;
+        opts.MaxTableRowComplexity = 1;
+        opts.MaxCompactArrayComplexity = -1;
+        opts.CollapseClosingBrackets = true;
+        opts.SimpleBracketPadding = false;
+        opts.NestedBracketPadding = false;
+        opts.JsonEolStyle = EolStyle.Lf;
+
+        const output = reformat(input, opts);
+
+        // There's enough space to fit the innermost ] on the same line as 9009, but no more.  The next
+        // ] starts on a new line, indented to match its opening.  But then there's plenty of room for
+        // the final one next to it.
+        const expected = [
+            "[",
+            "    [",
+            "        [",
+            "            3932,",
+            "            2399,",
+            "             444,",
+            "             222,",
+            "               1,",
+            "            9009  ]",
+            "    ]]",
+        ].join("\n");
+        expect(output.trimEnd()).toBe(expected);
+        for (const line of linesOf(output))
+            expect(line.length).toBeLessThanOrEqual(opts.MaxTotalLineLength);
+    });
+
     test("Collapsed lines stay within max total line length", () => {
         const opts = fullyExpanded();
         opts.MaxTotalLineLength = 40;

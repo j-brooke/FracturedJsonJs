@@ -50,4 +50,15 @@ describe("Always Expand Formatting Tests", () => {
         expect(DoInstancesLineUp(outputLines, ",")).toBeTruthy();
         expect(DoInstancesLineUp(outputLines, "9")).toBeTruthy();
     });
+
+    test("No blank lines when empty container expands", () => {
+        const input = "{}";
+        const expected = "{\n}";
+
+        const formatter = new Formatter();
+        formatter.Options.AlwaysExpandDepth = 0;
+        const output = formatter.Reformat(input, 0);
+
+        expect(output.trimEnd()).toBe(expected);
+    });
 });

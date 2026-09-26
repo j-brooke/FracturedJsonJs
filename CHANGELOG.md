@@ -13,6 +13,8 @@ All five settings default to false.
 ### Bug Fixes
 
 * Comments after the last property of an object, including comments around a trailing comma, are preserved. They used to be dropped on the way out of the object.
+* Expanding an empty array or object no longer inserts a blank line between the brackets.
+* A table row's width is counted when `CollapseClosingBrackets` decides whether the closing bracket fits on that line.
 
 ## 5.0.2
 

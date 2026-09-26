@@ -32,6 +32,18 @@ describe("Collapse opening brackets", () => {
         expect(outputLines[0]).toBe('{     "q" : [');
     });
 
+    test("Empty containers don't throw", () => {
+        const input = "[]";
+        const options = new FracturedJsonOptions();
+        options.AlwaysExpandDepth = 0;
+        options.CollapseOpeningBrackets = true;
+        options.JsonEolStyle = EolStyle.Lf;
+
+        const output = reformat(input, options);
+
+        expect(output.trimEnd()).toBe("[\n]");
+    });
+
     test("Tabs prevent collapse", () => {
         const options = commonOptions();
         options.UseTabToIndent = true;
