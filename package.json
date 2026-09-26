@@ -1,7 +1,9 @@
 {
   "name": "fracturedjsonjs",
   "version": "5.0.2",
-  "description": "JSON formatter that produces highly readable but fairly compact output",
+  "description": "JSON/JSONC formatter that stays compact: similar objects align like a table, short values stay inline.",
+  "keywords": ["json", "jsonc", "formatter", "pretty-print", "prettyprint", "beautify", "beautifier", "json-formatter", "compact", "readable", "table",
+    "alignment", "comments", "javascript", "typescript"],
   "main": "./dist/index.js",
   "scripts": {
     "test": "jest",
@@ -11,16 +13,6 @@
     "type": "git",
     "url": "git+https://github.com/j-brooke/FracturedJsonJs.git"
   },
-  "keywords": [
-    "JSON",
-    "JSONC",
-    "formatter",
-    "pretty printer",
-    "beautifier",
-    "stringify",
-    "compact",
-    "comments"
-  ],
   "author": "j-brooke",
   "license": "MIT",
   "bugs": {

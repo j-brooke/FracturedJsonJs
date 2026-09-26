@@ -5,7 +5,7 @@ humans to read, but fairly compact.  Arrays and objects are written on single li
 neither too long nor too complex.  When several such lines are similar in structure, they're written with
 fields aligned like a table.  Long arrays are written with multiple items per line across multiple lines.
 
-This `npm` module is part of a family of FracturedJson tools.
+Official JavaScript/TypeScript implementation of FracturedJson. Same formatting model as the .NET library.
 * [FracturedJsonJs GitHub Repo](https://github.com/j-brooke/FracturedJsonJs)
 * [FracturedJson Wiki Home](https://github.com/j-brooke/FracturedJson/wiki)
 * [npm Package](https://www.npmjs.com/package/fracturedjsonjs)
