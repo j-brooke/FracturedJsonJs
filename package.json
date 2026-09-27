@@ -1,6 +1,6 @@
 {
   "name": "fracturedjsonjs",
-  "version": "5.0.2",
+  "version": "5.1.0",
   "description": "JSON/JSONC formatter that stays compact: similar objects align like a table, short values stay inline.",
   "keywords": ["json", "jsonc", "formatter", "pretty-print", "prettyprint", "beautify", "beautifier", "json-formatter", "compact", "readable", "table",
     "alignment", "comments", "javascript", "typescript"],

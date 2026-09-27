@@ -1,20 +1,14 @@
 # FracturedJsonJs Change Log
 
-## Unreleased
+## 5.1.0
 
 ### Features
 
-Segments of similar children can be table-formatted even when other children in the same array or object have to be expanded.  `AllowTableSegments` turns that on.  `SplitTableSegmentsAtBlankLines` and `SplitTableSegmentsAtComments` start a new segment at a preserved blank line or a standalone comment.
+Table formatting can now apply to just parts of a container instead of all of its children if `AllowTableSegments` is set to `true`.  If one item is too long for inlining, for instance, the items above it and below it can still be table-formatted separately.  If `SplitTableSegmentsAtBlankLines` or `SplitTableSegmentsAtComments` are also set, blank lines or comments force the sections above and below to be treated as separate tables (if at all).
 
-Opening and closing brackets can share a line with the neighboring element.  `CollapseOpeningBrackets` writes the first element on the opening bracket's line when that element still starts at the normal indent (tabs disable this).  `CollapseClosingBrackets` writes the closing bracket on the last child's line when that child is a real value with no postfix comment and the combined line still fits in `MaxTotalLineLength`.
+Brackets for expanded arrays/objects don't require their own lines if `CollapseOpeningBrackets` or `CollapseClosingBrackets` are set to `true`.  Opening brackets will only be collapsed if there's enough room for them to start at their expected indent levels, and only when not using tabs to indent.  Closing brackets require that the end of the container isn't a comment.  They respect `MaxTotalLineLength`.
 
-All five settings default to false.
-
-### Bug Fixes
-
-* Comments after the last property of an object, including comments around a trailing comma, are preserved. They used to be dropped on the way out of the object.
-* Expanding an empty array or object no longer inserts a blank line between the brackets.
-* A table row's width is counted when `CollapseClosingBrackets` decides whether the closing bracket fits on that line.
+All five settings default to false.  However, `AllowTableSegments` is `true` in `FracturedJsonOptions.Recommended()`.
 
 ## 5.0.2
 
@@ -62,7 +56,7 @@ Example:
 * Default changed: `MaxCompactArrayComplexity` - now defaults to `2` instead of `1`.
 * Default changed: `NumberListAlignment` - now defaults to `Decimal` instead of `Normalize`.  There are many cases where changing numbers' representations can alter how software treats them.  `Decimal` always preserves exactly how numbers were written in their source documents, so it's a safer default.
 * Default changed: `TableCommaPlacement` - now defaults to `BeforePaddingExceptNumbers` instead of `AfterPadding`.  It looks nicer when `NumberListAlignment=Decimal`.
-* 
+*
 ## 4.1.1
 
 ### Bug Fix
@@ -92,7 +86,7 @@ Also added was a new factory method, `FracturedJsonOptions.Recommended()` which,
 
 ## 4.0.1
 
-### Bug Fixes 
+### Bug Fixes
 
 * Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/32) where no exception is thrown when there's a property name but no value at the end of an object.
 * Fixed a [bug](https://github.com/j-brooke/FracturedJson/issues/31) where object contents with `toJSON` methods were missing their property names, results in invalid JSON.

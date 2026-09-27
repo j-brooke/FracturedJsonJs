@@ -187,8 +187,8 @@ export class FracturedJsonOptions
      * this method may adopt newer, preferred settings.
      */
     static Recommended(): FracturedJsonOptions {
-        // At the beginning of version 5, the defaults are the recommended settings.  This may change in future
-        // minor versions.
-        return new FracturedJsonOptions();
+        const opts = new FracturedJsonOptions();
+        opts.AllowTableSegments = true;
+        return opts;
     }
 }
